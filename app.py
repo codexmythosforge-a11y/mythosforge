@@ -1,3 +1,7 @@
+import json
+import hashlib
+import hmac
+from pathlib import Path
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -16,6 +20,25 @@ import re
 import requests
 import tempfile
 import os
+
+VERIFIED_EMAILS_FILE = "verified_emails.json"
+LEMON_SQUEEZY_SECRET = st.secrets["LEMON_WEBHOOK_SECRET"]
+
+def load_verified_emails():
+    if Path(VERIFIED_EMAILS_FILE).exists():
+        with open(VERIFIED_EMAILS_FILE, "r") as f:
+            return json.load(f)
+    return []
+
+def save_verified_email(email):
+    emails = load_verified_emails()
+    if email not in emails:
+        emails.append(email.lower().strip())
+        with open(VERIFIED_EMAILS_FILE, "w") as f:
+            json.dump(emails, f)
+
+def is_email_verified(email):
+    return email.lower().strip() in load_verified_emails()
 
 # --- OpenAI Client ---
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -591,6 +614,27 @@ If it arrived in spam, mark it as Not Spam to receive future updates.
     except Exception as e:
         print(f"Email failed: {e}")
         return False
+    
+# --- Webhook Handler ---
+params = st.query_params
+
+if "webhook" in params:
+    try:
+        # Get raw payload from Lemon Squeezy
+        payload = params.get("payload", "")
+        signature = params.get("signature", "")
+        
+        # Verify signature
+        secret = st.secrets["LEMON_WEBHOOK_SECRET"].encode()
+        expected = hmac.new(secret, payload.encode(), hashlib.sha256).hexdigest()
+        
+        if hmac.compare_digest(expected, signature):
+            data = json.loads(payload)
+            customer_email = data.get("data", {}).get("attributes", {}).get("user_email", "")
+            if customer_email:
+                save_verified_email(customer_email)
+    except Exception as e:
+        print(f"Webhook error: {e}")
 
 # -------------------------------------------------------
 # MAIN LOGIC
@@ -647,36 +691,40 @@ if st.session_state.get("show_payment") and "pantheon" not in st.session_state:
     )
 
     if confirmed_btn:
-        name = st.session_state["pending_name"]
-        bio = st.session_state["pending_bio"]
-        events = st.session_state["pending_events"]
         email = st.session_state["pending_email"]
+        
+        if not is_email_verified(email):
+            st.error("✦ We couldn't verify your payment. Please make sure you used the same email address when paying, then try again.")
+        else:
+            name = st.session_state["pending_name"]
+            bio = st.session_state["pending_bio"]
+            events = st.session_state["pending_events"]
 
-        with st.spinner("⚡ Summoning your pantheon from the cosmos..."):
-            pantheon_text = generate_pantheon(name, bio, events)
-            legends_text = generate_legends(name, bio, events)
-            theme_color = generate_theme_color(name, bio)
-            st.session_state["pantheon"] = pantheon_text
-            st.session_state["legends"] = legends_text
-            st.session_state["name"] = name
-            st.session_state["theme_color"] = theme_color
+            with st.spinner("⚡ Summoning your pantheon from the cosmos..."):
+                pantheon_text = generate_pantheon(name, bio, events)
+                legends_text = generate_legends(name, bio, events)
+                theme_color = generate_theme_color(name, bio)
+                st.session_state["pantheon"] = pantheon_text
+                st.session_state["legends"] = legends_text
+                st.session_state["name"] = name
+                st.session_state["theme_color"] = theme_color
 
-        with st.spinner("🎨 Painting your gods in oils and starlight..."):
-            god_images = generate_god_images(pantheon_text)
-            pdf_buffer = build_pdf(
-                name, pantheon_text, legends_text, theme_color, god_images
-            )
-            st.session_state["pdf"] = pdf_buffer
-            for path in god_images:
-                if path and os.path.exists(path):
-                    os.remove(path)
+            with st.spinner("🎨 Painting your gods in oils and starlight..."):
+                god_images = generate_god_images(pantheon_text)
+                pdf_buffer = build_pdf(
+                    name, pantheon_text, legends_text, theme_color, god_images
+                )
+                st.session_state["pdf"] = pdf_buffer
+                for path in god_images:
+                    if path and os.path.exists(path):
+                        os.remove(path)
 
-        with st.spinner("📜 Delivering your codex across the cosmos..."):
-            email_sent = send_email(email, name, pdf_buffer)
-            if email_sent:
-                st.success(f"✦ Your Mythos Codex has been dispatched to **{email}** — check your inbox!")
-            else:
-                st.warning("✦ Email delivery failed — but you can still download below!")
+            with st.spinner("📜 Delivering your codex across the cosmos..."):
+                email_sent = send_email(email, name, pdf_buffer)
+                if email_sent:
+                    st.success(f"✦ Your Mythos Codex has been dispatched to **{email}** — check your inbox!")
+                else:
+                    st.warning("✦ Email delivery failed — but you can still download below!")
 # -------------------------------------------------------
 # DISPLAY RESULTS
 # -------------------------------------------------------
