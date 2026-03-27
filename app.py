@@ -874,8 +874,8 @@ if "webhook" in params:
 # MAIN LOGIC
 # -------------------------------------------------------
 # Your Lemon Squeezy payment link
-PAYMENT_LINK_ONETIME = "your-15-dollar-one-time-link-here"
-PAYMENT_LINK_MONTHLY = "your-9-dollar-monthly-link-here"
+PAYMENT_LINK_ONETIME= "https://mythosforge.lemonsqueezy.com/checkout/buy/15fcf7f4-492b-4630-a94f-ceae0162274f"
+PAYMENT_LINK_MONTHLY = "https://mythosforge.lemonsqueezy.com/checkout/buy/82f5497b-8406-4148-aaf0-e08a93d7ef61"
 
 generate_btn = st.button("⚡  FORGE MY MYTHOLOGY", use_container_width=True, key="forge_btn")
 
@@ -1052,7 +1052,7 @@ if st.session_state.get("show_plan_selection") and "pantheon" not in st.session_
                 else:
                     st.warning("✦ Email delivery failed — but you can still download below!")
 
-                    
+
 # -------------------------------------------------------
 # DISPLAY RESULTS
 # -------------------------------------------------------
