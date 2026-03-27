@@ -874,50 +874,142 @@ if "webhook" in params:
 # MAIN LOGIC
 # -------------------------------------------------------
 # Your Lemon Squeezy payment link
-PAYMENT_LINK = "https://mythosforge.lemonsqueezy.com/checkout/buy/15fcf7f4-492b-4630-a94f-ceae0162274f"  # paste yours here
+PAYMENT_LINK_ONETIME = "your-15-dollar-one-time-link-here"
+PAYMENT_LINK_MONTHLY = "your-9-dollar-monthly-link-here"
 
 generate_btn = st.button("⚡  FORGE MY MYTHOLOGY", use_container_width=True, key="forge_btn")
+
+# -------------------------------------------------------
+# MAIN LOGIC
+# -------------------------------------------------------
+generate_btn = st.button("⚡  FORGE MY MYTHOLOGY", 
+                          use_container_width=True, 
+                          key="forge_btn")
 
 if generate_btn:
     if not name or not bio or not events or not email:
         st.warning("✦ Please fill in all fields to forge your mythology.")
     else:
-        # Save form data to session so it's ready after payment
         st.session_state["pending_name"] = name
         st.session_state["pending_bio"] = bio
         st.session_state["pending_events"] = events
         st.session_state["pending_email"] = email
-        st.session_state["show_payment"] = True
+        st.session_state["show_plan_selection"] = True
+        st.session_state["selected_plan"] = None
 
-# --- Payment Step ---
-if st.session_state.get("show_payment") and "pantheon" not in st.session_state:
+# ---- PLAN SELECTION ----
+if st.session_state.get("show_plan_selection") and "pantheon" not in st.session_state:
+
     st.markdown("""
     <div style="
         background: linear-gradient(135deg, #0d0d1a, #1a0a2e);
-        border-radius: 16px;
-        padding: 32px;
+        border-radius: 20px;
+        padding: 36px 30px;
+        margin: 24px 0;
+        border: 1px solid rgba(232,200,122,0.2);
         text-align: center;
-        margin: 20px 0;
-        border: 1px solid #e8c87a33;
     ">
-        <div style="font-family: 'Cinzel', serif; color: #e8c87a; font-size: 1.3em; letter-spacing: 2px; margin-bottom: 12px;">
-            ✦ ONE LAST STEP
+        <div style="font-family: 'Cinzel', serif; color: #e8c87a;
+             font-size: 1.2em; letter-spacing: 4px; margin-bottom: 8px;">
+            ✦ YOUR STORY IS READY
         </div>
-        <div style="font-family: 'Lato', sans-serif; color: #a89bc2; font-size: 1em; margin-bottom: 24px; line-height: 1.6;">
-            Your mythology awaits. Complete your sacred offering to unlock your personal codex.
+        <div style="font-family: 'Lato', sans-serif; color: #a89bc2;
+             font-size: 0.95em; margin-bottom: 0; line-height: 1.6;">
+            Choose your path to unlock your personal mythology.
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
+    # Plan cards side by side
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("""
+        <div style="
+            background: linear-gradient(160deg, #fffef9, #fdf6e3);
+            border-radius: 16px;
+            padding: 28px 20px;
+            text-align: center;
+            border: 2px solid #c9a84c;
+            margin-bottom: 12px;
+        ">
+            <div style="font-family: 'Cinzel', serif; color: #4B0082;
+                 font-size: 0.85em; letter-spacing: 3px; margin-bottom: 10px;">
+                SINGLE CODEX
+            </div>
+            <div style="font-family: 'Cinzel', serif; color: #2c2c2c;
+                 font-size: 2.2em; font-weight: 700;">$15</div>
+            <div style="font-family: 'Lato', sans-serif; color: #9e8f7a;
+                 font-size: 0.85em; margin-bottom: 16px;">one time</div>
+            <div style="font-family: 'Lato', sans-serif; color: #5a4a3a;
+                 font-size: 0.82em; line-height: 1.8;">
+                ✦ One complete Mythos Codex<br>
+                ✦ 6 AI painted god portraits<br>
+                ✦ Delivered to your inbox<br>
+                ✦ Download forever
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
         st.link_button(
-            "💳  COMPLETE PAYMENT",
-            PAYMENT_LINK,
+            "💳  PAY $15 — ONE TIME",
+            PAYMENT_LINK_ONETIME,
             use_container_width=True
         )
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    with col2:
+        st.markdown("""
+        <div style="
+            background: linear-gradient(135deg, #0d0d1a, #1a0a2e);
+            border-radius: 16px;
+            padding: 28px 20px;
+            text-align: center;
+            border: 2px solid #4B0082;
+            margin-bottom: 12px;
+            position: relative;
+        ">
+            <div style="
+                position: absolute; top: -12px; left: 50%;
+                transform: translateX(-50%);
+                background: linear-gradient(135deg, #4B0082, #7B2FBE);
+                color: #e8c87a;
+                font-family: 'Cinzel', serif;
+                font-size: 0.65em;
+                letter-spacing: 2px;
+                padding: 4px 16px;
+                border-radius: 20px;
+                white-space: nowrap;
+            ">MOST POPULAR</div>
+            <div style="font-family: 'Cinzel', serif; color: #a89bc2;
+                 font-size: 0.85em; letter-spacing: 3px; margin-bottom: 10px;">
+                ETERNAL FORGE
+            </div>
+            <div style="font-family: 'Cinzel', serif; color: #e8c87a;
+                 font-size: 2.2em; font-weight: 700;">$9</div>
+            <div style="font-family: 'Lato', sans-serif; color: #a89bc2;
+                 font-size: 0.85em; margin-bottom: 16px;">per month</div>
+            <div style="font-family: 'Lato', sans-serif; color: #c9b8e8;
+                 font-size: 0.82em; line-height: 1.8;">
+                ✦ Unlimited generations<br>
+                ✦ Update as your life evolves<br>
+                ✦ All future features included<br>
+                ✦ Cancel anytime
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.link_button(
+            "💳  PAY $9 — PER MONTH",
+            PAYMENT_LINK_MONTHLY,
+            use_container_width=True
+        )
+
+    # Divider
+    st.markdown("""
+    <div style="text-align:center; font-family: 'Lato', sans-serif;
+         color: #9e8f7a; font-size: 0.85em; margin: 20px 0 10px 0;">
+        ✦ Already paid? Enter the same email you used and click below ✦
+    </div>
+    """, unsafe_allow_html=True)
+
     confirmed_btn = st.button(
         "✅  I'VE PAID — GENERATE MY CODEX",
         use_container_width=True,
@@ -926,7 +1018,7 @@ if st.session_state.get("show_payment") and "pantheon" not in st.session_state:
 
     if confirmed_btn:
         email = st.session_state["pending_email"]
-        
+
         if not is_email_verified(email):
             st.error("✦ We couldn't verify your payment. Please make sure you used the same email address when paying, then try again.")
         else:
@@ -959,6 +1051,8 @@ if st.session_state.get("show_payment") and "pantheon" not in st.session_state:
                     st.success(f"✦ Your Mythos Codex has been dispatched to **{email}** — check your inbox!")
                 else:
                     st.warning("✦ Email delivery failed — but you can still download below!")
+
+                    
 # -------------------------------------------------------
 # DISPLAY RESULTS
 # -------------------------------------------------------
