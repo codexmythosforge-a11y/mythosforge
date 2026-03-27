@@ -854,19 +854,43 @@ params = st.query_params
 
 if "webhook" in params:
     try:
-        # Get raw payload from Lemon Squeezy
         payload = params.get("payload", "")
         signature = params.get("signature", "")
-        
-        # Verify signature
+
         secret = st.secrets["LEMON_WEBHOOK_SECRET"].encode()
         expected = hmac.new(secret, payload.encode(), hashlib.sha256).hexdigest()
-        
+
         if hmac.compare_digest(expected, signature):
             data = json.loads(payload)
-            customer_email = data.get("data", {}).get("attributes", {}).get("user_email", "")
-            if customer_email:
-                save_verified_email(customer_email)
+            event_name = data.get("meta", {}).get("event_name", "")
+
+            # Handle one-time payment
+            if event_name == "order_created":
+                customer_email = (data.get("data", {})
+                                 .get("attributes", {})
+                                 .get("user_email", ""))
+                if customer_email:
+                    save_verified_email(customer_email)
+
+            # Handle new subscription
+            elif event_name == "subscription_created":
+                customer_email = (data.get("data", {})
+                                 .get("attributes", {})
+                                 .get("user_email", ""))
+                if customer_email:
+                    save_verified_email(customer_email)
+
+            # Handle subscription renewal — keep them verified
+            elif event_name == "subscription_updated":
+                customer_email = (data.get("data", {})
+                                 .get("attributes", {})
+                                 .get("user_email", ""))
+                status = (data.get("data", {})
+                         .get("attributes", {})
+                         .get("status", ""))
+                if customer_email and status == "active":
+                    save_verified_email(customer_email)
+
     except Exception as e:
         print(f"Webhook error: {e}")
 
