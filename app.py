@@ -63,7 +63,6 @@ st.markdown("""
 footer {visibility: hidden;}
 header {visibility: hidden;}
 
-/* Full page — parchment texture via CSS noise pattern */
 .stApp {
     background-color: #f5f0e8;
     background-image:
@@ -71,10 +70,10 @@ header {visibility: hidden;}
     background-repeat: repeat;
 }
 
-/* ---- HERO ---- */
+/* ---- HERO with animated glow ---- */
 .hero {
     background: linear-gradient(135deg, #0d0d1a 0%, #1a0a2e 50%, #0d0d1a 100%);
-    padding: 60px 40px 50px 40px;
+    padding: 70px 40px 60px 40px;
     text-align: center;
     border-radius: 0 0 30px 30px;
     margin: -60px -60px 40px -60px;
@@ -83,17 +82,45 @@ header {visibility: hidden;}
     overflow: hidden;
 }
 
-/* Subtle radial glow behind title */
+/* Animated moving glow orbs */
 .hero::before {
     content: '';
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 500px;
-    height: 200px;
-    background: radial-gradient(ellipse, rgba(232,200,122,0.08) 0%, transparent 70%);
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background:
+        radial-gradient(ellipse at 30% 50%, rgba(123,47,190,0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 50%, rgba(232,200,122,0.08) 0%, transparent 50%);
+    animation: floatGlow 8s ease-in-out infinite alternate;
     pointer-events: none;
+}
+
+/* Second glow layer */
+.hero::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+        radial-gradient(ellipse at 50% 100%, rgba(75,0,130,0.2) 0%, transparent 60%);
+    animation: pulseGlow 4s ease-in-out infinite alternate;
+    pointer-events: none;
+}
+
+@keyframes floatGlow {
+    0%   { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(3%, 5%) scale(1.05); }
+}
+
+@keyframes pulseGlow {
+    0%   { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
 }
 
 .hero-title {
@@ -103,7 +130,7 @@ header {visibility: hidden;}
     color: #e8c87a;
     letter-spacing: 4px;
     margin: 0;
-    text-shadow: 0 0 30px rgba(232,200,122,0.5);
+    text-shadow: 0 0 40px rgba(232,200,122,0.6), 0 0 80px rgba(232,200,122,0.2);
 }
 
 .hero-subtitle {
@@ -115,7 +142,6 @@ header {visibility: hidden;}
     font-weight: 300;
 }
 
-/* ---- GOLDEN SEPARATOR ---- */
 .hero-divider {
     width: 80px;
     height: 2px;
@@ -123,7 +149,6 @@ header {visibility: hidden;}
     margin: 20px auto;
 }
 
-/* ---- EPIC TAGLINE ---- */
 .hero-tagline {
     font-family: 'Cinzel', serif;
     font-size: 0.78em;
@@ -134,23 +159,189 @@ header {visibility: hidden;}
     font-style: italic;
 }
 
-/* ---- FORM CARD with parchment texture ---- */
-.form-card {
-    background-color: #fffdf7;
-    background-image:
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"),
-        linear-gradient(160deg, #fffef9 0%, #fdf6e3 50%, #faf0d7 100%);
-    background-repeat: repeat, no-repeat;
-    background-size: 300px 300px, cover;
-    border-radius: 16px;
-    padding: 35px 40px;
-    box-shadow:
-        0 4px 24px rgba(0,0,0,0.07),
-        inset 0 1px 0 rgba(255,255,255,0.8);
-    margin-bottom: 24px;
-    border: 1px solid #e2d9c5;
+/* ---- ORNAMENTAL DIVIDER ---- */
+.ornament {
+    text-align: center;
+    color: #c9a84c;
+    font-size: 1.4em;
+    letter-spacing: 12px;
+    margin: 30px 0;
+    opacity: 0.7;
 }
 
+.ornament-line {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 35px 0;
+}
+
+.ornament-line::before,
+.ornament-line::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #c9a84c, transparent);
+}
+
+.ornament-line span {
+    font-family: 'Cinzel', serif;
+    color: #c9a84c;
+    font-size: 1.2em;
+    white-space: nowrap;
+    letter-spacing: 4px;
+}
+
+/* ---- HOW IT WORKS ---- */
+.how-it-works {
+    background: linear-gradient(135deg, #0d0d1a, #1a0a2e);
+    border-radius: 20px;
+    padding: 40px 30px;
+    margin: 30px 0;
+    border: 1px solid rgba(232,200,122,0.15);
+}
+
+.how-title {
+    font-family: 'Cinzel', serif;
+    color: #e8c87a;
+    font-size: 1.2em;
+    letter-spacing: 4px;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.steps-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.step {
+    flex: 1;
+    min-width: 150px;
+    text-align: center;
+    padding: 20px 15px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 12px;
+    border: 1px solid rgba(232,200,122,0.1);
+    position: relative;
+}
+
+.step-number {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, #4B0082, #7B2FBE);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cinzel', serif;
+    color: #e8c87a;
+    font-size: 1.1em;
+    font-weight: 700;
+    margin: 0 auto 14px auto;
+    box-shadow: 0 0 20px rgba(75,0,130,0.4);
+}
+
+.step-title {
+    font-family: 'Cinzel', serif;
+    color: #e8c87a;
+    font-size: 0.85em;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+}
+
+.step-desc {
+    font-family: 'Lato', sans-serif;
+    color: #a89bc2;
+    font-size: 0.85em;
+    line-height: 1.6;
+}
+
+/* ---- PRICING CARDS ---- */
+.pricing-container {
+    display: flex;
+    gap: 20px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.pricing-card {
+    flex: 1;
+    min-width: 200px;
+    border-radius: 16px;
+    padding: 28px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.pricing-card.one-time {
+    background: linear-gradient(160deg, #fffef9, #fdf6e3);
+    border-color: #c9a84c;
+}
+
+.pricing-card.monthly {
+    background: linear-gradient(135deg, #0d0d1a, #1a0a2e);
+    border-color: #4B0082;
+    position: relative;
+    overflow: hidden;
+}
+
+.popular-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: linear-gradient(135deg, #4B0082, #7B2FBE);
+    color: #e8c87a;
+    font-family: 'Cinzel', serif;
+    font-size: 0.65em;
+    letter-spacing: 2px;
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+.pricing-plan-name {
+    font-family: 'Cinzel', serif;
+    font-size: 0.9em;
+    letter-spacing: 3px;
+    margin-bottom: 12px;
+}
+
+.one-time .pricing-plan-name { color: #4B0082; }
+.monthly .pricing-plan-name  { color: #a89bc2; }
+
+.pricing-price {
+    font-family: 'Cinzel', serif;
+    font-size: 2.4em;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.one-time .pricing-price { color: #2c2c2c; }
+.monthly .pricing-price  { color: #e8c87a; }
+
+.pricing-period {
+    font-family: 'Lato', sans-serif;
+    font-size: 0.85em;
+    margin-bottom: 16px;
+}
+
+.one-time .pricing-period { color: #9e8f7a; }
+.monthly .pricing-period  { color: #a89bc2; }
+
+.pricing-feature {
+    font-family: 'Lato', sans-serif;
+    font-size: 0.85em;
+    margin: 6px 0;
+}
+
+.one-time .pricing-feature { color: #5a4a3a; }
+.monthly .pricing-feature  { color: #c9b8e8; }
+
+/* ---- FORM ---- */
 .section-label {
     font-family: 'Cinzel', serif;
     font-size: 0.85em;
@@ -161,7 +352,6 @@ header {visibility: hidden;}
     font-weight: 700;
 }
 
-/* ---- INPUT FIELDS ---- */
 .stTextInput > div > div > input {
     background: #ffffff !important;
     border: 1.5px solid #c9bca8 !important;
@@ -182,12 +372,7 @@ header {visibility: hidden;}
     padding: 12px 16px !important;
 }
 
-/* Placeholder text color */
-.stTextInput > div > div > input::placeholder {
-    color: #9e8f7a !important;
-    opacity: 1 !important;
-}
-
+.stTextInput > div > div > input::placeholder,
 .stTextArea > div > div > textarea::placeholder {
     color: #9e8f7a !important;
     opacity: 1 !important;
@@ -200,7 +385,7 @@ header {visibility: hidden;}
     background: #fffdf7 !important;
 }
 
-/* ---- FORGE BUTTON with shimmer ---- */
+/* ---- BUTTONS ---- */
 .stButton > button {
     background: linear-gradient(135deg, #4B0082, #7B2FBE) !important;
     color: #e8c87a !important;
@@ -219,22 +404,14 @@ header {visibility: hidden;}
     transition: box-shadow 0.3s ease !important;
 }
 
-/* Shimmer sweep animation */
 .stButton > button::after {
     content: '' !important;
     position: absolute !important;
-    top: 0 !important;
-    left: -100% !important;
+    top: 0 !important; left: -100% !important;
     width: 60% !important;
     height: 100% !important;
-    background: linear-gradient(
-        120deg,
-        transparent 0%,
-        rgba(255,255,255,0.15) 40%,
-        rgba(232,200,122,0.25) 50%,
-        rgba(255,255,255,0.15) 60%,
-        transparent 100%
-    ) !important;
+    background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.15) 40%,
+        rgba(232,200,122,0.25) 50%, rgba(255,255,255,0.15) 60%, transparent 100%) !important;
     animation: shimmer 2.8s infinite !important;
 }
 
@@ -248,7 +425,6 @@ header {visibility: hidden;}
     box-shadow: 0 6px 28px rgba(75,0,130,0.65) !important;
 }
 
-/* ---- DOWNLOAD BUTTON ---- */
 .stDownloadButton > button {
     background: linear-gradient(135deg, #1a6b3a, #2d9e5a) !important;
     color: #ffffff !important;
@@ -260,6 +436,22 @@ header {visibility: hidden;}
     border-radius: 12px !important;
     padding: 14px 28px !important;
     box-shadow: 0 4px 20px rgba(26,107,58,0.4) !important;
+}
+
+.stLinkButton > a {
+    background: linear-gradient(135deg, #b8860b, #e8c87a) !important;
+    color: #0d0d1a !important;
+    font-family: 'Cinzel', serif !important;
+    font-size: 1em !important;
+    font-weight: 700 !important;
+    letter-spacing: 2px !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 14px 28px !important;
+    box-shadow: 0 4px 20px rgba(184,134,11,0.4) !important;
+    text-decoration: none !important;
+    display: block !important;
+    text-align: center !important;
 }
 
 /* ---- RESULT CARDS ---- */
@@ -287,34 +479,6 @@ header {visibility: hidden;}
     color: #2c2c2c;
     margin-bottom: 24px;
 }
-
-/* Payment button */
-.stLinkButton > a {
-    background: linear-gradient(135deg, #b8860b, #e8c87a) !important;
-    color: #0d0d1a !important;
-    font-family: 'Cinzel', serif !important;
-    font-size: 1em !important;
-    font-weight: 700 !important;
-    letter-spacing: 2px !important;
-    border: none !important;
-    border-radius: 12px !important;
-    padding: 14px 28px !important;
-    box-shadow: 0 4px 20px rgba(184,134,11,0.4) !important;
-    text-decoration: none !important;
-    display: block !important;
-    text-align: center !important;
-}
-
-/* Confirmed button */
-[data-testid="stButton"] button[kind="secondary"] {
-    background: transparent !important;
-    border: 1.5px solid #4B0082 !important;
-    color: #4B0082 !important;
-    font-family: 'Cinzel', serif !important;
-    letter-spacing: 2px !important;
-    border-radius: 12px !important;
-}            
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -323,11 +487,81 @@ header {visibility: hidden;}
 # -------------------------------------------------------
 st.markdown("""
 <div class="hero">
-    <div class="hero-title">⚡ MYTHOSFORGE AI</div>
-    <div class="hero-divider"></div>
-    <div class="hero-subtitle">TURN YOUR LIFE INTO AN EPIC PERSONAL MYTHOLOGY</div>
-    <div class="hero-tagline">"Every soul carries within it the seeds of legend."</div>
+    <div class="hero-content">
+        <div class="hero-title">⚡ MYTHOSFORGE AI</div>
+        <div class="hero-divider"></div>
+        <div class="hero-subtitle">TURN YOUR LIFE INTO AN EPIC PERSONAL MYTHOLOGY</div>
+        <div class="hero-tagline">"Every soul carries within it the seeds of legend."</div>
+    </div>
 </div>
+""", unsafe_allow_html=True)
+
+# ---- ORNAMENT ----
+st.markdown("""
+<div class="ornament-line"><span>✦ ✦ ✦</span></div>
+""", unsafe_allow_html=True)
+
+# ---- HOW IT WORKS ----
+st.markdown("""
+<div class="how-it-works">
+    <div class="how-title">✦ HOW IT WORKS ✦</div>
+    <div class="steps-container">
+        <div class="step">
+            <div class="step-number">I</div>
+            <div class="step-title">SHARE YOUR STORY</div>
+            <div class="step-desc">Tell us who you are — your passions, struggles, and defining life moments.</div>
+        </div>
+        <div class="step">
+            <div class="step-number">II</div>
+            <div class="step-title">THE FORGE AWAKENS</div>
+            <div class="step-desc">Our AI mythologist crafts your personal pantheon of gods and epic legends.</div>
+        </div>
+        <div class="step">
+            <div class="step-number">III</div>
+            <div class="step-title">RECEIVE YOUR CODEX</div>
+            <div class="step-desc">A stunning illustrated PDF Mythos Codex is delivered straight to your inbox.</div>
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# ---- ORNAMENT ----
+st.markdown("""
+<div class="ornament-line"><span>✦ ✦ ✦</span></div>
+""", unsafe_allow_html=True)
+
+# ---- PRICING ----
+st.markdown("""
+<div style="font-family: 'Cinzel', serif; color: #4B0082; font-size: 1em;
+     letter-spacing: 4px; text-align: center; margin-bottom: 20px;">
+     ✦ CHOOSE YOUR PATH ✦
+</div>
+<div class="pricing-container">
+    <div class="pricing-card one-time">
+        <div class="pricing-plan-name">SINGLE CODEX</div>
+        <div class="pricing-price">$15</div>
+        <div class="pricing-period">one time</div>
+        <div class="pricing-feature">✦ One complete Mythos Codex</div>
+        <div class="pricing-feature">✦ 6 AI painted god portraits</div>
+        <div class="pricing-feature">✦ Delivered to your inbox</div>
+        <div class="pricing-feature">✦ Download forever</div>
+    </div>
+    <div class="pricing-card monthly">
+        <div class="popular-badge">MOST POPULAR</div>
+        <div class="pricing-plan-name">ETERNAL FORGE</div>
+        <div class="pricing-price">$9</div>
+        <div class="pricing-period">per month</div>
+        <div class="pricing-feature">✦ Unlimited generations</div>
+        <div class="pricing-feature">✦ Update as your life evolves</div>
+        <div class="pricing-feature">✦ All future features included</div>
+        <div class="pricing-feature">✦ Cancel anytime</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# ---- ORNAMENT ----
+st.markdown("""
+<div class="ornament-line"><span>✦ ✦ ✦</span></div>
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------
