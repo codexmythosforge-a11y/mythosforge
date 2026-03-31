@@ -1,29 +1,47 @@
+# -------------------------------------------------------
+# MYTHOSFORGE AI — app.py
+# -------------------------------------------------------
+
+# --- Standard Library Imports ---
+import io
 import json
+import os
+import re
+import smtplib
+import tempfile
 import hashlib
 import hmac
-from pathlib import Path
-import smtplib
+from email import encoders
+from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.mime.base import MIMEBase
-from email import encoders
+from pathlib import Path
+
+# --- Third Party Imports ---
+import requests
 import streamlit as st
 from openai import OpenAI
+from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
-from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
-from reportlab.platypus import Image as RLImage
-import io
-import re
-import requests
-import tempfile
-import os
+from reportlab.platypus import (
+    HRFlowable, Image as RLImage, Paragraph, SimpleDocTemplate, Spacer
+)
 
+# -------------------------------------------------------
+# CONFIGURATION
+# -------------------------------------------------------
 VERIFIED_EMAILS_FILE = "verified_emails.json"
-LEMON_SQUEEZY_SECRET = st.secrets["LEMON_WEBHOOK_SECRET"]
+PAYMENT_LINK_ONETIME = "https://mythforge5.gumroad.com/l/hgbkqy"
+PAYMENT_LINK_MONTHLY = "https://mythforge5.gumroad.com/l/bwsvyn"
 
+# --- Clients ---
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+# -------------------------------------------------------
+# PAYMENT VERIFICATION HELPERS
+# -------------------------------------------------------
 def load_verified_emails():
     if Path(VERIFIED_EMAILS_FILE).exists():
         with open(VERIFIED_EMAILS_FILE, "r") as f:
@@ -40,8 +58,19 @@ def save_verified_email(email):
 def is_email_verified(email):
     return email.lower().strip() in load_verified_emails()
 
-# --- OpenAI Client ---
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+# -------------------------------------------------------
+# GUMROAD WEBHOOK HANDLER
+# -------------------------------------------------------
+params = st.query_params
+
+if "webhook" in params:
+    try:
+        sale_email = params.get("email", "")
+        refunded = params.get("refunded", "false")
+        if sale_email and refunded == "false":
+            save_verified_email(sale_email)
+    except Exception as e:
+        print(f"Webhook error: {e}")
 
 # -------------------------------------------------------
 # PAGE CONFIG
@@ -82,7 +111,6 @@ header {visibility: hidden;}
     overflow: hidden;
 }
 
-/* Animated moving glow orbs */
 .hero::before {
     content: '';
     position: absolute;
@@ -97,13 +125,11 @@ header {visibility: hidden;}
     pointer-events: none;
 }
 
-/* Second glow layer */
 .hero::after {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background:
-        radial-gradient(ellipse at 50% 100%, rgba(75,0,130,0.2) 0%, transparent 60%);
+    background: radial-gradient(ellipse at 50% 100%, rgba(75,0,130,0.2) 0%, transparent 60%);
     animation: pulseGlow 4s ease-in-out infinite alternate;
     pointer-events: none;
 }
@@ -118,10 +144,7 @@ header {visibility: hidden;}
     100% { opacity: 1; }
 }
 
-.hero-content {
-    position: relative;
-    z-index: 2;
-}
+.hero-content { position: relative; z-index: 2; }
 
 .hero-title {
     font-family: 'Cinzel', serif;
@@ -160,15 +183,6 @@ header {visibility: hidden;}
 }
 
 /* ---- ORNAMENTAL DIVIDER ---- */
-.ornament {
-    text-align: center;
-    color: #c9a84c;
-    font-size: 1.4em;
-    letter-spacing: 12px;
-    margin: 30px 0;
-    opacity: 0.7;
-}
-
 .ornament-line {
     display: flex;
     align-items: center;
@@ -225,7 +239,6 @@ header {visibility: hidden;}
     background: rgba(255,255,255,0.03);
     border-radius: 12px;
     border: 1px solid rgba(232,200,122,0.1);
-    position: relative;
 }
 
 .step-number {
@@ -273,8 +286,6 @@ header {visibility: hidden;}
     border-radius: 16px;
     padding: 28px 24px;
     text-align: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
     border: 2px solid transparent;
 }
 
@@ -407,11 +418,18 @@ header {visibility: hidden;}
 .stButton > button::after {
     content: '' !important;
     position: absolute !important;
-    top: 0 !important; left: -100% !important;
+    top: 0 !important;
+    left: -100% !important;
     width: 60% !important;
     height: 100% !important;
-    background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.15) 40%,
-        rgba(232,200,122,0.25) 50%, rgba(255,255,255,0.15) 60%, transparent 100%) !important;
+    background: linear-gradient(
+        120deg,
+        transparent 0%,
+        rgba(255,255,255,0.15) 40%,
+        rgba(232,200,122,0.25) 50%,
+        rgba(255,255,255,0.15) 60%,
+        transparent 100%
+    ) !important;
     animation: shimmer 2.8s infinite !important;
 }
 
@@ -497,9 +515,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---- ORNAMENT ----
-st.markdown("""
-<div class="ornament-line"><span>✦ ✦ ✦</span></div>
-""", unsafe_allow_html=True)
+st.markdown('<div class="ornament-line"><span>✦ ✦ ✦</span></div>', unsafe_allow_html=True)
 
 # ---- HOW IT WORKS ----
 st.markdown("""
@@ -526,9 +542,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---- ORNAMENT ----
-st.markdown("""
-<div class="ornament-line"><span>✦ ✦ ✦</span></div>
-""", unsafe_allow_html=True)
+st.markdown('<div class="ornament-line"><span>✦ ✦ ✦</span></div>', unsafe_allow_html=True)
 
 # ---- PRICING ----
 st.markdown("""
@@ -560,12 +574,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---- ORNAMENT ----
-st.markdown("""
-<div class="ornament-line"><span>✦ ✦ ✦</span></div>
-""", unsafe_allow_html=True)
+st.markdown('<div class="ornament-line"><span>✦ ✦ ✦</span></div>', unsafe_allow_html=True)
 
 # -------------------------------------------------------
-# FORM CARD
+# FORM
 # -------------------------------------------------------
 st.markdown('<div class="section-label">✦ Your Identity</div>', unsafe_allow_html=True)
 name = st.text_input("", placeholder="Enter your name...", key="name_input",
@@ -586,17 +598,17 @@ st.markdown('<div class="section-label" style="margin-top:20px;">✦ Your Sacred
 email = st.text_input("", placeholder="Where shall we deliver your codex...",
                       key="email_input", label_visibility="collapsed")
 
-
-
 # -------------------------------------------------------
-# HELPER FUNCTIONS
+# AI HELPER FUNCTIONS
 # -------------------------------------------------------
 def md_to_reportlab(text):
+    """Convert markdown bold to ReportLab tags and strip bullet dashes."""
     text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', text)
     text = re.sub(r'^-\s+', '', text.strip())
     return text
 
 def call_llm(prompt):
+    """Send a prompt to GPT-4o and return the response text."""
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
@@ -643,6 +655,7 @@ Separate each legend with ---.
     return call_llm(prompt)
 
 def generate_theme_color(name, bio):
+    """Ask GPT to pick a hex color that matches the user's mythological energy."""
     prompt = f"""
 Based on this person's personality and life story, pick ONE hex color code that best represents their mythological energy.
 
@@ -653,10 +666,11 @@ Reply with ONLY a single hex color code like #4B0082. Nothing else.
 """
     color = call_llm(prompt).strip()
     if not re.match(r'^#[0-9A-Fa-f]{6}$', color):
-        color = "#4B0082"
+        color = "#4B0082"  # fallback purple
     return color
 
 def generate_god_images(pantheon_text):
+    """Generate one DALL-E oil painting per god based on their appearance."""
     images = []
     god_blocks = pantheon_text.split("---")
 
@@ -665,6 +679,7 @@ def generate_god_images(pantheon_text):
         if not block:
             continue
 
+        # Extract god name
         god_name = "A deity"
         for line in block.split("\n"):
             clean = re.sub(r'\*\*(.*?)\*\*', r'\1', line.strip())
@@ -674,6 +689,7 @@ def generate_god_images(pantheon_text):
                     god_name = parts[1].strip()
                     break
 
+        # Extract appearance
         appearance = ""
         for line in block.split("\n"):
             clean = re.sub(r'\*\*(.*?)\*\*', r'\1', line.strip())
@@ -714,6 +730,9 @@ def generate_god_images(pantheon_text):
 
     return images
 
+# -------------------------------------------------------
+# PDF BUILDER
+# -------------------------------------------------------
 def build_pdf(name, pantheon_text, legends_text, theme_color="#4B0082", god_images=[]):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4,
@@ -735,24 +754,23 @@ def build_pdf(name, pantheon_text, legends_text, theme_color="#4B0082", god_imag
                                 textColor=colors.HexColor("#2C2C2C"))
 
     story = []
+
+    # Cover page
     story.append(Spacer(1, 2*cm))
     story.append(Paragraph("⚡ The Mythos Codex", title_style))
     story.append(Paragraph(f"of {name}", title_style))
     story.append(Spacer(1, 0.5*cm))
     story.append(Paragraph("Forged by MythosForge AI", subtitle_style))
-    story.append(HRFlowable(width="100%", thickness=2,
-                            color=colors.HexColor(theme_color)))
+    story.append(HRFlowable(width="100%", thickness=2, color=colors.HexColor(theme_color)))
     story.append(Spacer(1, 1*cm))
 
+    # Pantheon section
     story.append(Paragraph(f"⚡ The Pantheon of {name}", section_header_style))
-    story.append(HRFlowable(width="100%", thickness=1,
-                            color=colors.HexColor(theme_color)))
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor(theme_color)))
     story.append(Spacer(1, 0.3*cm))
 
-    god_blocks = pantheon_text.split("---")
-    valid_blocks = [b.strip() for b in god_blocks if b.strip()]
-
-    for i, block in enumerate(valid_blocks):
+    god_blocks = [b.strip() for b in pantheon_text.split("---") if b.strip()]
+    for i, block in enumerate(god_blocks):
         if i < len(god_images) and god_images[i]:
             try:
                 img = RLImage(god_images[i], width=10*cm, height=10*cm)
@@ -770,10 +788,10 @@ def build_pdf(name, pantheon_text, legends_text, theme_color="#4B0082", god_imag
         story.append(HRFlowable(width="80%", thickness=0.5, color=colors.grey))
         story.append(Spacer(1, 0.4*cm))
 
+    # Legends section
     story.append(Spacer(1, 1*cm))
     story.append(Paragraph(f"📜 The Legends of {name}", section_header_style))
-    story.append(HRFlowable(width="100%", thickness=1,
-                            color=colors.HexColor(theme_color)))
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor(theme_color)))
     story.append(Spacer(1, 0.3*cm))
 
     for line in legends_text.split("\n"):
@@ -786,25 +804,27 @@ def build_pdf(name, pantheon_text, legends_text, theme_color="#4B0082", god_imag
         else:
             story.append(Paragraph(md_to_reportlab(line), body_style))
 
+    # Footer
     story.append(Spacer(1, 1*cm))
-    story.append(HRFlowable(width="100%", thickness=1,
-                            color=colors.HexColor(theme_color)))
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor(theme_color)))
     story.append(Paragraph("Generated by MythosForge AI — mythosforge.ai", subtitle_style))
 
     doc.build(story)
     buffer.seek(0)
     return buffer
 
+# -------------------------------------------------------
+# EMAIL SENDER
+# -------------------------------------------------------
 def send_email(recipient_email, name, pdf_buffer):
     SENDER_EMAIL = st.secrets["SENDER_EMAIL"]
-    SENDER_PASSWORD = st.secrets["SENDER_PASSWORD"]  # your 16-char app password
+    SENDER_PASSWORD = st.secrets["SENDER_PASSWORD"]
 
     msg = MIMEMultipart()
     msg["From"] = f"MythosForge AI <{SENDER_EMAIL}>"
     msg["To"] = recipient_email
     msg["Subject"] = f"⚡ Your Mythos Codex Awaits, {name}"
 
-    # Email body
     body = f"""
 Hail, {name}.
 
@@ -828,18 +848,14 @@ If it arrived in spam, mark it as Not Spam to receive future updates.
 """
     msg.attach(MIMEText(body, "plain"))
 
-    # Attach PDF
     pdf_buffer.seek(0)
     attachment = MIMEBase("application", "octet-stream")
     attachment.set_payload(pdf_buffer.read())
     encoders.encode_base64(attachment)
-    attachment.add_header(
-        "Content-Disposition",
-        f"attachment; filename={name}_Mythos_Codex.pdf"
-    )
+    attachment.add_header("Content-Disposition",
+                          f"attachment; filename={name}_Mythos_Codex.pdf")
     msg.attach(attachment)
 
-    # Send
     try:
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(SENDER_EMAIL, SENDER_PASSWORD)
@@ -848,66 +864,13 @@ If it arrived in spam, mark it as Not Spam to receive future updates.
     except Exception as e:
         print(f"Email failed: {e}")
         return False
-    
-# --- Webhook Handler ---
-params = st.query_params
-
-if "webhook" in params:
-    try:
-        payload = params.get("payload", "")
-        signature = params.get("signature", "")
-
-        secret = st.secrets["LEMON_WEBHOOK_SECRET"].encode()
-        expected = hmac.new(secret, payload.encode(), hashlib.sha256).hexdigest()
-
-        if hmac.compare_digest(expected, signature):
-            data = json.loads(payload)
-            event_name = data.get("meta", {}).get("event_name", "")
-
-            # Handle one-time payment
-            if event_name == "order_created":
-                customer_email = (data.get("data", {})
-                                 .get("attributes", {})
-                                 .get("user_email", ""))
-                if customer_email:
-                    save_verified_email(customer_email)
-
-            # Handle new subscription
-            elif event_name == "subscription_created":
-                customer_email = (data.get("data", {})
-                                 .get("attributes", {})
-                                 .get("user_email", ""))
-                if customer_email:
-                    save_verified_email(customer_email)
-
-            # Handle subscription renewal — keep them verified
-            elif event_name == "subscription_updated":
-                customer_email = (data.get("data", {})
-                                 .get("attributes", {})
-                                 .get("user_email", ""))
-                status = (data.get("data", {})
-                         .get("attributes", {})
-                         .get("status", ""))
-                if customer_email and status == "active":
-                    save_verified_email(customer_email)
-
-    except Exception as e:
-        print(f"Webhook error: {e}")
 
 # -------------------------------------------------------
 # MAIN LOGIC
 # -------------------------------------------------------
-# Your Lemon Squeezy payment link
-PAYMENT_LINK_ONETIME= "https://mythosforge.lemonsqueezy.com/checkout/buy/15fcf7f4-492b-4630-a94f-ceae0162274f"
-PAYMENT_LINK_MONTHLY = "https://mythosforge.lemonsqueezy.com/checkout/buy/82f5497b-8406-4148-aaf0-e08a93d7ef61"
-
-
-# -------------------------------------------------------
-# MAIN LOGIC
-# -------------------------------------------------------
-generate_btn = st.button("⚡  FORGE MY MYTHOLOGY", 
-                          use_container_width=True, 
-                          key="forge_btn")
+generate_btn = st.button("⚡  FORGE MY MYTHOLOGY",
+                         use_container_width=True,
+                         key="forge_btn")
 
 if generate_btn:
     if not name or not bio or not events or not email:
@@ -918,9 +881,8 @@ if generate_btn:
         st.session_state["pending_events"] = events
         st.session_state["pending_email"] = email
         st.session_state["show_plan_selection"] = True
-        st.session_state["selected_plan"] = None
 
-# ---- PLAN SELECTION ----
+# ---- PLAN SELECTION & PAYMENT ----
 if st.session_state.get("show_plan_selection") and "pantheon" not in st.session_state:
 
     st.markdown("""
@@ -937,29 +899,22 @@ if st.session_state.get("show_plan_selection") and "pantheon" not in st.session_
             ✦ YOUR STORY IS READY
         </div>
         <div style="font-family: 'Lato', sans-serif; color: #a89bc2;
-             font-size: 0.95em; margin-bottom: 0; line-height: 1.6;">
+             font-size: 0.95em; line-height: 1.6;">
             Choose your path to unlock your personal mythology.
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # Plan cards side by side
     col1, col2 = st.columns(2)
 
     with col1:
         st.markdown("""
-        <div style="
-            background: linear-gradient(160deg, #fffef9, #fdf6e3);
-            border-radius: 16px;
-            padding: 28px 20px;
-            text-align: center;
-            border: 2px solid #c9a84c;
-            margin-bottom: 12px;
-        ">
+        <div style="background: linear-gradient(160deg, #fffef9, #fdf6e3);
+             border-radius: 16px; padding: 28px 20px; text-align: center;
+             border: 2px solid #c9a84c; margin-bottom: 12px;">
             <div style="font-family: 'Cinzel', serif; color: #4B0082;
                  font-size: 0.85em; letter-spacing: 3px; margin-bottom: 10px;">
-                SINGLE CODEX
-            </div>
+                SINGLE CODEX</div>
             <div style="font-family: 'Cinzel', serif; color: #2c2c2c;
                  font-size: 2.2em; font-weight: 700;">$15</div>
             <div style="font-family: 'Lato', sans-serif; color: #9e8f7a;
@@ -973,39 +928,23 @@ if st.session_state.get("show_plan_selection") and "pantheon" not in st.session_
             </div>
         </div>
         """, unsafe_allow_html=True)
-        st.link_button(
-            "💳  PAY $15 — ONE TIME",
-            PAYMENT_LINK_ONETIME,
-            use_container_width=True
-        )
+        st.link_button("💳  PAY $15 — ONE TIME", PAYMENT_LINK_ONETIME,
+                       use_container_width=True)
 
     with col2:
         st.markdown("""
-        <div style="
-            background: linear-gradient(135deg, #0d0d1a, #1a0a2e);
-            border-radius: 16px;
-            padding: 28px 20px;
-            text-align: center;
-            border: 2px solid #4B0082;
-            margin-bottom: 12px;
-            position: relative;
-        ">
-            <div style="
-                position: absolute; top: -12px; left: 50%;
-                transform: translateX(-50%);
-                background: linear-gradient(135deg, #4B0082, #7B2FBE);
-                color: #e8c87a;
-                font-family: 'Cinzel', serif;
-                font-size: 0.65em;
-                letter-spacing: 2px;
-                padding: 4px 16px;
-                border-radius: 20px;
-                white-space: nowrap;
-            ">MOST POPULAR</div>
+        <div style="background: linear-gradient(135deg, #0d0d1a, #1a0a2e);
+             border-radius: 16px; padding: 28px 20px; text-align: center;
+             border: 2px solid #4B0082; margin-bottom: 12px; position: relative;">
+            <div style="position: absolute; top: -12px; left: 50%;
+                 transform: translateX(-50%);
+                 background: linear-gradient(135deg, #4B0082, #7B2FBE);
+                 color: #e8c87a; font-family: 'Cinzel', serif; font-size: 0.65em;
+                 letter-spacing: 2px; padding: 4px 16px; border-radius: 20px;
+                 white-space: nowrap;">MOST POPULAR</div>
             <div style="font-family: 'Cinzel', serif; color: #a89bc2;
                  font-size: 0.85em; letter-spacing: 3px; margin-bottom: 10px;">
-                ETERNAL FORGE
-            </div>
+                ETERNAL FORGE</div>
             <div style="font-family: 'Cinzel', serif; color: #e8c87a;
                  font-size: 2.2em; font-weight: 700;">$9</div>
             <div style="font-family: 'Lato', sans-serif; color: #a89bc2;
@@ -1019,13 +958,9 @@ if st.session_state.get("show_plan_selection") and "pantheon" not in st.session_
             </div>
         </div>
         """, unsafe_allow_html=True)
-        st.link_button(
-            "💳  PAY $9 — PER MONTH",
-            PAYMENT_LINK_MONTHLY,
-            use_container_width=True
-        )
+        st.link_button("💳  PAY $9 — PER MONTH", PAYMENT_LINK_MONTHLY,
+                       use_container_width=True)
 
-    # Divider
     st.markdown("""
     <div style="text-align:center; font-family: 'Lato', sans-serif;
          color: #9e8f7a; font-size: 0.85em; margin: 20px 0 10px 0;">
@@ -1033,11 +968,9 @@ if st.session_state.get("show_plan_selection") and "pantheon" not in st.session_
     </div>
     """, unsafe_allow_html=True)
 
-    confirmed_btn = st.button(
-        "✅  I'VE PAID — GENERATE MY CODEX",
-        use_container_width=True,
-        key="confirmed_btn"
-    )
+    confirmed_btn = st.button("✅  I'VE PAID — GENERATE MY CODEX",
+                              use_container_width=True,
+                              key="confirmed_btn")
 
     if confirmed_btn:
         email = st.session_state["pending_email"]
@@ -1045,24 +978,23 @@ if st.session_state.get("show_plan_selection") and "pantheon" not in st.session_
         if not is_email_verified(email):
             st.error("✦ We couldn't verify your payment. Please make sure you used the same email address when paying, then try again.")
         else:
-            name = st.session_state["pending_name"]
-            bio = st.session_state["pending_bio"]
+            name   = st.session_state["pending_name"]
+            bio    = st.session_state["pending_bio"]
             events = st.session_state["pending_events"]
 
             with st.spinner("⚡ Summoning your pantheon from the cosmos..."):
                 pantheon_text = generate_pantheon(name, bio, events)
-                legends_text = generate_legends(name, bio, events)
-                theme_color = generate_theme_color(name, bio)
-                st.session_state["pantheon"] = pantheon_text
-                st.session_state["legends"] = legends_text
-                st.session_state["name"] = name
-                st.session_state["theme_color"] = theme_color
+                legends_text  = generate_legends(name, bio, events)
+                theme_color   = generate_theme_color(name, bio)
+                st.session_state["pantheon"]     = pantheon_text
+                st.session_state["legends"]      = legends_text
+                st.session_state["name"]         = name
+                st.session_state["theme_color"]  = theme_color
 
             with st.spinner("🎨 Painting your gods in oils and starlight..."):
                 god_images = generate_god_images(pantheon_text)
-                pdf_buffer = build_pdf(
-                    name, pantheon_text, legends_text, theme_color, god_images
-                )
+                pdf_buffer = build_pdf(name, pantheon_text, legends_text,
+                                       theme_color, god_images)
                 st.session_state["pdf"] = pdf_buffer
                 for path in god_images:
                     if path and os.path.exists(path):
@@ -1074,7 +1006,6 @@ if st.session_state.get("show_plan_selection") and "pantheon" not in st.session_
                     st.success(f"✦ Your Mythos Codex has been dispatched to **{email}** — check your inbox!")
                 else:
                     st.warning("✦ Email delivery failed — but you can still download below!")
-
 
 # -------------------------------------------------------
 # DISPLAY RESULTS
