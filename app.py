@@ -31,10 +31,15 @@ from reportlab.platypus import (
 # CONFIGURATION
 # -------------------------------------------------------
 VERIFIED_EMAILS_FILE = "verified_emails.json"
-PAYMENT_LINK_ONETIME = "https://mythforge5.gumroad.com/l/hgbkqy"  # update with new $7 link
-PAYMENT_LINK_MONTHLY = "https://mythforge5.gumroad.com/l/bwsvyn"  # update with new $12 link
+PAYMENT_LINK_ONETIME = "https://mythforge5.gumroad.com/l/hgbkqy"
+PAYMENT_LINK_MONTHLY = "https://mythforge5.gumroad.com/l/bwsvyn"
 
-# --- Clients ---
+# Free access emails for marketing/demo purposes
+FREE_ACCESS_EMAILS = [
+    "codex.mythosforge@gmail.com",
+]
+
+# --- OpenAI Client ---
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # -------------------------------------------------------
@@ -52,14 +57,6 @@ def save_verified_email(email):
         emails.append(email.lower().strip())
         with open(VERIFIED_EMAILS_FILE, "w") as f:
             json.dump(emails, f)
-
-# Free access emails — for marketing and demo purposes
-FREE_ACCESS_EMAILS = [
-    "vedextra32@gmail.com",        # yourself
-    "friend1@gmail.com",          # marketing friend 1
-    "friend2@gmail.com",          # marketing friend 2
-    "demo@mythosforge.com",       # demo account
-]
 
 def is_email_verified(email):
     clean_email = email.lower().strip()
@@ -102,14 +99,12 @@ st.markdown("""
 footer {visibility: hidden;}
 header {visibility: hidden;}
 
-/* ---- BASE ---- */
 .stApp {
     background-color: #f5f0e8;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
     background-repeat: repeat;
 }
 
-/* ---- HERO ---- */
 .hero {
     background: linear-gradient(135deg, #0d0d1a 0%, #1a0a2e 50%, #0d0d1a 100%);
     padding: 60px 24px 50px 24px;
@@ -120,7 +115,6 @@ header {visibility: hidden;}
     position: relative;
     overflow: hidden;
 }
-
 .hero::before {
     content: '';
     position: absolute;
@@ -132,7 +126,6 @@ header {visibility: hidden;}
     animation: floatGlow 8s ease-in-out infinite alternate;
     pointer-events: none;
 }
-
 .hero::after {
     content: '';
     position: absolute;
@@ -141,7 +134,6 @@ header {visibility: hidden;}
     animation: pulseGlow 4s ease-in-out infinite alternate;
     pointer-events: none;
 }
-
 @keyframes floatGlow {
     0%   { transform: translate(0, 0) scale(1); }
     100% { transform: translate(3%, 5%) scale(1.05); }
@@ -150,9 +142,7 @@ header {visibility: hidden;}
     0%   { opacity: 0.5; }
     100% { opacity: 1; }
 }
-
 .hero-content { position: relative; z-index: 2; }
-
 .hero-title {
     font-family: 'Cinzel', serif;
     font-size: clamp(1.6em, 5vw, 3em);
@@ -162,10 +152,8 @@ header {visibility: hidden;}
     margin: 0;
     line-height: 1.2;
     text-shadow: 0 0 40px rgba(232,200,122,0.6), 0 0 80px rgba(232,200,122,0.2);
-    word-break: keep-all;
     white-space: nowrap;
 }
-
 .hero-subtitle {
     font-family: 'Lato', sans-serif;
     font-size: clamp(0.7em, 2.5vw, 1.1em);
@@ -175,14 +163,11 @@ header {visibility: hidden;}
     font-weight: 300;
     padding: 0 10px;
 }
-
 .hero-divider {
-    width: 60px;
-    height: 2px;
+    width: 60px; height: 2px;
     background: linear-gradient(90deg, transparent, #e8c87a, transparent);
     margin: 16px auto;
 }
-
 .hero-tagline {
     font-family: 'Cinzel', serif;
     font-size: clamp(0.6em, 1.5vw, 0.78em);
@@ -193,188 +178,103 @@ header {visibility: hidden;}
     font-style: italic;
     padding: 0 16px;
 }
-
-/* ---- ORNAMENTAL DIVIDER ---- */
 .ornament-line {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin: 28px 0;
+    display: flex; align-items: center; gap: 12px; margin: 28px 0;
 }
-.ornament-line::before,
-.ornament-line::after {
-    content: '';
-    flex: 1;
-    height: 1px;
+.ornament-line::before, .ornament-line::after {
+    content: ''; flex: 1; height: 1px;
     background: linear-gradient(90deg, transparent, #c9a84c, transparent);
 }
 .ornament-line span {
-    font-family: 'Cinzel', serif;
-    color: #c9a84c;
-    font-size: 1em;
-    white-space: nowrap;
-    letter-spacing: 4px;
+    font-family: 'Cinzel', serif; color: #c9a84c;
+    font-size: 1em; white-space: nowrap; letter-spacing: 4px;
 }
-
-/* ---- HOW IT WORKS ---- */
 .how-it-works {
     background: linear-gradient(135deg, #0d0d1a, #1a0a2e);
-    border-radius: 16px;
-    padding: 32px 20px;
-    margin: 24px 0;
+    border-radius: 16px; padding: 32px 20px; margin: 24px 0;
     border: 1px solid rgba(232,200,122,0.15);
 }
 .how-title {
-    font-family: 'Cinzel', serif;
-    color: #e8c87a;
+    font-family: 'Cinzel', serif; color: #e8c87a;
     font-size: clamp(0.85em, 2vw, 1.2em);
-    letter-spacing: 3px;
-    text-align: center;
-    margin-bottom: 24px;
+    letter-spacing: 3px; text-align: center; margin-bottom: 24px;
 }
 .steps-container {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    flex-wrap: wrap;
+    display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
 }
 .step {
-    flex: 1;
-    min-width: 140px;
-    text-align: center;
-    padding: 18px 12px;
-    background: rgba(255,255,255,0.03);
-    border-radius: 12px;
+    flex: 1; min-width: 140px; text-align: center; padding: 18px 12px;
+    background: rgba(255,255,255,0.03); border-radius: 12px;
     border: 1px solid rgba(232,200,122,0.1);
 }
 .step-number {
-    width: 40px;
-    height: 40px;
+    width: 40px; height: 40px;
     background: linear-gradient(135deg, #4B0082, #7B2FBE);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Cinzel', serif;
-    color: #e8c87a;
-    font-size: 1em;
-    font-weight: 700;
-    margin: 0 auto 12px auto;
-    box-shadow: 0 0 20px rgba(75,0,130,0.4);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-family: 'Cinzel', serif; color: #e8c87a; font-size: 1em; font-weight: 700;
+    margin: 0 auto 12px auto; box-shadow: 0 0 20px rgba(75,0,130,0.4);
 }
 .step-title {
-    font-family: 'Cinzel', serif;
-    color: #e8c87a;
-    font-size: clamp(0.7em, 1.5vw, 0.85em);
-    letter-spacing: 2px;
-    margin-bottom: 8px;
+    font-family: 'Cinzel', serif; color: #e8c87a;
+    font-size: clamp(0.7em, 1.5vw, 0.85em); letter-spacing: 2px; margin-bottom: 8px;
 }
 .step-desc {
-    font-family: 'Lato', sans-serif;
-    color: #a89bc2;
-    font-size: clamp(0.75em, 1.5vw, 0.85em);
-    line-height: 1.6;
+    font-family: 'Lato', sans-serif; color: #a89bc2;
+    font-size: clamp(0.75em, 1.5vw, 0.85em); line-height: 1.6;
 }
-
-/* ---- PRICING CARDS ---- */
-.pricing-container {
-    display: flex;
-    gap: 16px;
-    margin: 16px 0;
-    flex-wrap: wrap;
-}
+.pricing-container { display: flex; gap: 16px; margin: 16px 0; flex-wrap: wrap; }
 .pricing-card {
-    flex: 1;
-    min-width: 160px;
-    border-radius: 16px;
-    padding: 24px 16px;
-    text-align: center;
-    border: 2px solid transparent;
+    flex: 1; min-width: 160px; border-radius: 16px;
+    padding: 24px 16px; text-align: center; border: 2px solid transparent;
 }
 .pricing-card.one-time {
-    background: linear-gradient(160deg, #fffef9, #fdf6e3);
-    border-color: #c9a84c;
+    background: linear-gradient(160deg, #fffef9, #fdf6e3); border-color: #c9a84c;
 }
 .pricing-card.monthly {
     background: linear-gradient(135deg, #0d0d1a, #1a0a2e);
-    border-color: #4B0082;
-    position: relative;
-    overflow: hidden;
+    border-color: #4B0082; position: relative; overflow: hidden;
 }
 .popular-badge {
-    position: absolute;
-    top: 10px; right: 10px;
+    position: absolute; top: 10px; right: 10px;
     background: linear-gradient(135deg, #4B0082, #7B2FBE);
-    color: #e8c87a;
-    font-family: 'Cinzel', serif;
-    font-size: 0.6em;
-    letter-spacing: 2px;
-    padding: 3px 8px;
-    border-radius: 20px;
+    color: #e8c87a; font-family: 'Cinzel', serif; font-size: 0.6em;
+    letter-spacing: 2px; padding: 3px 8px; border-radius: 20px;
 }
 .pricing-plan-name {
     font-family: 'Cinzel', serif;
-    font-size: clamp(0.7em, 1.5vw, 0.9em);
-    letter-spacing: 2px;
-    margin-bottom: 10px;
+    font-size: clamp(0.7em, 1.5vw, 0.9em); letter-spacing: 2px; margin-bottom: 10px;
 }
 .one-time .pricing-plan-name { color: #4B0082; }
 .monthly .pricing-plan-name  { color: #a89bc2; }
 .pricing-price {
     font-family: 'Cinzel', serif;
-    font-size: clamp(1.8em, 4vw, 2.4em);
-    font-weight: 700;
-    margin-bottom: 4px;
+    font-size: clamp(1.8em, 4vw, 2.4em); font-weight: 700; margin-bottom: 4px;
 }
 .one-time .pricing-price { color: #2c2c2c; }
 .monthly .pricing-price  { color: #e8c87a; }
-.pricing-period {
-    font-family: 'Lato', sans-serif;
-    font-size: 0.85em;
-    margin-bottom: 14px;
-}
+.pricing-period { font-family: 'Lato', sans-serif; font-size: 0.85em; margin-bottom: 14px; }
 .one-time .pricing-period { color: #9e8f7a; }
 .monthly .pricing-period  { color: #a89bc2; }
-.pricing-feature {
-    font-family: 'Lato', sans-serif;
-    font-size: clamp(0.75em, 1.5vw, 0.85em);
-    margin: 5px 0;
-}
+.pricing-feature { font-family: 'Lato', sans-serif; font-size: clamp(0.75em, 1.5vw, 0.85em); margin: 5px 0; }
 .one-time .pricing-feature { color: #5a4a3a; }
 .monthly .pricing-feature  { color: #c9b8e8; }
-
-/* ---- FORM ---- */
 .section-label {
-    font-family: 'Cinzel', serif;
-    font-size: 0.85em;
-    color: #4B0082;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    font-weight: 700;
+    font-family: 'Cinzel', serif; font-size: 0.85em; color: #4B0082;
+    letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; font-weight: 700;
 }
 .stTextInput > div > div > input {
-    background: #ffffff !important;
-    border: 1.5px solid #c9bca8 !important;
-    border-radius: 10px !important;
-    font-family: 'Lato', sans-serif !important;
-    font-size: 1em !important;
-    color: #1a1a1a !important;
-    padding: 12px 16px !important;
+    background: #ffffff !important; border: 1.5px solid #c9bca8 !important;
+    border-radius: 10px !important; font-family: 'Lato', sans-serif !important;
+    font-size: 1em !important; color: #1a1a1a !important; padding: 12px 16px !important;
 }
 .stTextArea > div > div > textarea {
-    background: #ffffff !important;
-    border: 1.5px solid #c9bca8 !important;
-    border-radius: 10px !important;
-    font-family: 'Lato', sans-serif !important;
-    font-size: 1em !important;
-    color: #1a1a1a !important;
-    padding: 12px 16px !important;
+    background: #ffffff !important; border: 1.5px solid #c9bca8 !important;
+    border-radius: 10px !important; font-family: 'Lato', sans-serif !important;
+    font-size: 1em !important; color: #1a1a1a !important; padding: 12px 16px !important;
 }
 .stTextInput > div > div > input::placeholder,
 .stTextArea > div > div > textarea::placeholder {
-    color: #9e8f7a !important;
-    opacity: 1 !important;
+    color: #9e8f7a !important; opacity: 1 !important;
 }
 .stTextInput > div > div > input:focus,
 .stTextArea > div > div > textarea:focus {
@@ -382,34 +282,23 @@ header {visibility: hidden;}
     box-shadow: 0 0 0 3px rgba(75,0,130,0.1) !important;
     background: #fffdf7 !important;
 }
-
-/* ---- BUTTONS ---- */
 .stButton > button {
     background: linear-gradient(135deg, #4B0082, #7B2FBE) !important;
-    color: #e8c87a !important;
-    font-family: 'Cinzel', serif !important;
-    font-size: clamp(0.85em, 2vw, 1.1em) !important;
-    font-weight: 700 !important;
-    letter-spacing: 2px !important;
-    border: none !important;
-    border-radius: 12px !important;
-    padding: 14px 24px !important;
-    cursor: pointer !important;
+    color: #e8c87a !important; font-family: 'Cinzel', serif !important;
+    font-size: clamp(0.85em, 2vw, 1.1em) !important; font-weight: 700 !important;
+    letter-spacing: 2px !important; border: none !important; border-radius: 12px !important;
+    padding: 14px 24px !important; cursor: pointer !important;
     box-shadow: 0 4px 20px rgba(75,0,130,0.4) !important;
-    text-transform: uppercase !important;
-    position: relative !important;
-    overflow: hidden !important;
-    transition: box-shadow 0.3s ease !important;
+    text-transform: uppercase !important; position: relative !important;
+    overflow: hidden !important; transition: box-shadow 0.3s ease !important;
     width: 100% !important;
 }
 .stButton > button::after {
-    content: '' !important;
-    position: absolute !important;
+    content: '' !important; position: absolute !important;
     top: 0 !important; left: -100% !important;
     width: 60% !important; height: 100% !important;
-    background: linear-gradient(120deg, transparent 0%,
-        rgba(255,255,255,0.15) 40%, rgba(232,200,122,0.25) 50%,
-        rgba(255,255,255,0.15) 60%, transparent 100%) !important;
+    background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.15) 40%,
+        rgba(232,200,122,0.25) 50%, rgba(255,255,255,0.15) 60%, transparent 100%) !important;
     animation: shimmer 2.8s infinite !important;
 }
 @keyframes shimmer {
@@ -417,64 +306,37 @@ header {visibility: hidden;}
     60%  { left: 150%; }
     100% { left: 150%; }
 }
-.stButton > button:hover {
-    box-shadow: 0 6px 28px rgba(75,0,130,0.65) !important;
-}
+.stButton > button:hover { box-shadow: 0 6px 28px rgba(75,0,130,0.65) !important; }
 .stDownloadButton > button {
     background: linear-gradient(135deg, #1a6b3a, #2d9e5a) !important;
-    color: #ffffff !important;
-    font-family: 'Cinzel', serif !important;
-    font-size: clamp(0.8em, 1.5vw, 1em) !important;
-    font-weight: 700 !important;
-    letter-spacing: 2px !important;
-    border: none !important;
-    border-radius: 12px !important;
-    padding: 14px 20px !important;
+    color: #ffffff !important; font-family: 'Cinzel', serif !important;
+    font-size: clamp(0.8em, 1.5vw, 1em) !important; font-weight: 700 !important;
+    letter-spacing: 2px !important; border: none !important;
+    border-radius: 12px !important; padding: 14px 20px !important;
     box-shadow: 0 4px 20px rgba(26,107,58,0.4) !important;
 }
 .stLinkButton > a {
     background: linear-gradient(135deg, #b8860b, #e8c87a) !important;
-    color: #0d0d1a !important;
-    font-family: 'Cinzel', serif !important;
-    font-size: clamp(0.75em, 1.5vw, 1em) !important;
-    font-weight: 700 !important;
-    letter-spacing: 2px !important;
-    border: none !important;
-    border-radius: 12px !important;
-    padding: 12px 16px !important;
+    color: #0d0d1a !important; font-family: 'Cinzel', serif !important;
+    font-size: clamp(0.75em, 1.5vw, 1em) !important; font-weight: 700 !important;
+    letter-spacing: 2px !important; border: none !important;
+    border-radius: 12px !important; padding: 12px 16px !important;
     box-shadow: 0 4px 20px rgba(184,134,11,0.4) !important;
-    text-decoration: none !important;
-    display: block !important;
-    text-align: center !important;
+    text-decoration: none !important; display: block !important; text-align: center !important;
 }
-
-/* ---- RESULT CARDS ---- */
 .result-header {
-    background: linear-gradient(135deg, #0d0d1a, #1a0a2e);
-    color: #e8c87a;
-    font-family: 'Cinzel', serif;
-    font-size: clamp(0.95em, 2.5vw, 1.4em);
-    letter-spacing: 2px;
-    padding: 18px 20px;
-    border-radius: 12px 12px 0 0;
-    text-align: center;
+    background: linear-gradient(135deg, #0d0d1a, #1a0a2e); color: #e8c87a;
+    font-family: 'Cinzel', serif; font-size: clamp(0.95em, 2.5vw, 1.4em);
+    letter-spacing: 2px; padding: 18px 20px; border-radius: 12px 12px 0 0; text-align: center;
 }
 .result-body {
     background: #fffdf7;
     background-image: linear-gradient(160deg, #fffef9 0%, #fdf6e3 100%);
-    border: 1px solid #e8e0d5;
-    border-top: none;
-    border-radius: 0 0 12px 12px;
-    padding: 24px 20px;
-    font-family: 'Lato', sans-serif;
-    font-size: clamp(0.9em, 2vw, 1em);
-    line-height: 1.8;
-    color: #2c2c2c;
-    margin-bottom: 20px;
-    word-wrap: break-word;
+    border: 1px solid #e8e0d5; border-top: none;
+    border-radius: 0 0 12px 12px; padding: 24px 20px;
+    font-family: 'Lato', sans-serif; font-size: clamp(0.9em, 2vw, 1em);
+    line-height: 1.8; color: #2c2c2c; margin-bottom: 20px; word-wrap: break-word;
 }
-
-/* ---- MOBILE OVERRIDES ---- */
 @media (max-width: 640px) {
     .hero { margin: -60px -12px 24px -12px; padding: 50px 16px 40px 16px; }
     .hero-title { font-size: 1.6em; letter-spacing: 2px; }
@@ -503,7 +365,6 @@ st.markdown("""
 
 st.markdown('<div class="ornament-line"><span>✦ ✦ ✦</span></div>', unsafe_allow_html=True)
 
-# ---- HOW IT WORKS ----
 st.markdown("""
 <div class="how-it-works">
     <div class="how-title">✦ HOW IT WORKS ✦</div>
@@ -529,12 +390,9 @@ st.markdown("""
 
 st.markdown('<div class="ornament-line"><span>✦ ✦ ✦</span></div>', unsafe_allow_html=True)
 
-# ---- PRICING ----
 st.markdown("""
 <div style="font-family: 'Cinzel', serif; color: #4B0082; font-size: clamp(0.8em, 2vw, 1em);
-     letter-spacing: 3px; text-align: center; margin-bottom: 16px;">
-     ✦ CHOOSE YOUR PATH ✦
-</div>
+     letter-spacing: 3px; text-align: center; margin-bottom: 16px;">✦ CHOOSE YOUR PATH ✦</div>
 <div class="pricing-container">
     <div class="pricing-card one-time">
         <div class="pricing-plan-name">SINGLE CODEX</div>
@@ -543,7 +401,7 @@ st.markdown("""
         <div class="pricing-feature">✦ One complete Mythos Codex</div>
         <div class="pricing-feature">✦ AI painted god portraits</div>
         <div class="pricing-feature">✦ Delivered to your inbox</div>
-        <div class="pricing-feature">✦ Download forever</div>
+        <div class="pricing-feature">✦ Yours forever</div>
     </div>
     <div class="pricing-card monthly">
         <div class="popular-badge">MOST POPULAR</div>
@@ -564,8 +422,8 @@ st.markdown('<div class="ornament-line"><span>✦ ✦ ✦</span></div>', unsafe_
 # FORM
 # -------------------------------------------------------
 st.markdown('<div class="section-label">✦ Your Name</div>', unsafe_allow_html=True)
-name = st.text_input("", placeholder="What do people call you?", key="name_input",
-                     label_visibility="collapsed")
+name = st.text_input("", placeholder="What do people call you?",
+                     key="name_input", label_visibility="collapsed")
 
 st.markdown('<div class="section-label" style="margin-top:20px;">✦ Who You Are</div>',
             unsafe_allow_html=True)
@@ -574,7 +432,7 @@ bio = st.text_area("", placeholder="Tell us about yourself in your own words —
 
 st.markdown('<div class="section-label" style="margin-top:20px;">✦ Your Hobbies & Passions</div>',
             unsafe_allow_html=True)
-hobbies = st.text_area("", placeholder="List your hobbies and passions, one per line...\ne.g. Playing chess\nMorning runs\nCooking for friends",
+hobbies = st.text_area("", placeholder="What do you love doing? List them however feels natural...\ne.g. Chess, running, cooking for friends\nor: I love photography and hiking on weekends\nor: I have no particular hobbies",
                        height=100, key="hobbies_input", label_visibility="collapsed")
 
 st.markdown('<div class="section-label" style="margin-top:20px;">✦ Moments That Defined You</div>',
@@ -588,7 +446,7 @@ email = st.text_input("", placeholder="Where should we send your Codex?",
                       key="email_input", label_visibility="collapsed")
 
 # -------------------------------------------------------
-# AI HELPER FUNCTIONS
+# HELPER FUNCTIONS
 # -------------------------------------------------------
 def md_to_reportlab(text):
     """Convert markdown bold to ReportLab tags and strip bullet dashes."""
@@ -606,16 +464,52 @@ def call_llm(prompt):
     return response.choices[0].message.content
 
 def count_hobbies(hobbies_text):
-    """Count the number of hobbies entered — used to decide image count."""
-    lines = [l.strip() for l in hobbies_text.strip().split("\n") if l.strip()]
-    return max(1, min(len(lines), 6))  # between 1 and 6
+    """
+    Smartly count hobbies regardless of separator style.
+    Handles commas, newlines, full stops, and natural language.
+    Returns minimum 2, maximum 6.
+    """
+    text = hobbies_text.strip().lower()
+
+    # If person says they have no hobbies — return minimum
+    no_hobby_phrases = [
+        "no hobbies", "don't have hobbies", "no hobby",
+        "i have none", "none", "nothing", "no interests",
+        "i don't have any", "i have no", "not really"
+    ]
+    if any(phrase in text for phrase in no_hobby_phrases):
+        return 2
+
+    # Split by comma, newline, or full stop
+    parts = re.split(r'[,\.\n]+', hobbies_text)
+    parts = [p.strip() for p in parts if p.strip() and len(p.strip()) > 2]
+    count = len(parts)
+
+    # If it reads as one natural sentence, count conjunctions
+    if count <= 1:
+        conjunctions = len(re.findall(r'\band\b|\balso\b|\bplus\b', text))
+        count = conjunctions + 1
+
+    return max(2, min(count, 6))
+
+def split_pantheon(pantheon_text):
+    """
+    Safely split pantheon into god blocks.
+    Tries --- first, falls back to double newline.
+    """
+    if "---" in pantheon_text:
+        blocks = pantheon_text.split("---")
+    else:
+        blocks = pantheon_text.split("\n\n")
+    return [b.strip() for b in blocks if b.strip()]
 
 def generate_pantheon(name, bio, hobbies, events, num_gods):
     prompt = f"""
 You are a gifted mythologist and storyteller with a warm, human voice.
 Based on the real person below, create a personal pantheon of exactly {num_gods} gods or goddesses.
 
-Each deity should feel deeply personal — rooted in this person's actual hobbies, struggles, personality quirks, and life experiences. 
+Each deity should feel deeply personal — rooted in this person's actual hobbies, struggles, 
+personality quirks, and life experiences.
 Give them names that feel epic but also somehow fitting, as if they were always meant for this person.
 Write as if you genuinely know and care about this person's story.
 
@@ -631,7 +525,10 @@ For each deity, write:
 - Backstory (2-3 warm, personal sentences connecting them to this person's real story)
 - Sacred Symbol (one meaningful object or image)
 
-Separate each deity with ---.
+IMPORTANT FORMATTING RULE: You MUST separate each deity block with exactly this on its own line:
+---
+Do not use any other separator. This is critical for the document to be built correctly.
+
 Make this feel like something this person will treasure forever.
 """
     return call_llm(prompt)
@@ -639,11 +536,11 @@ Make this feel like something this person will treasure forever.
 def generate_legends(name, bio, hobbies, events):
     prompt = f"""
 You are a master storyteller with a gift for finding the epic in the everyday.
-Take the real life moments below and retell each one as a mythic legend — 
+Take the real life moments below and retell each one as a mythic legend —
 the kind of story that would be whispered around ancient fires.
 
-But keep the human heart of it. Don't make it so grand it feels fake — 
-make it feel true AND legendary at the same time. Like this person's life genuinely mattered.
+Keep the human heart of it. Don't make it so grand it feels fake —
+make it feel true AND legendary at the same time.
 
 Person's name: {name}
 About them: {bio}
@@ -652,15 +549,16 @@ Life moments to retell (write a legend for EACH one): {events}
 
 For each moment:
 - Give it a legend title that gives you chills
-- Write 3-4 sentences retelling it as ancient mythology, 
+- Write 3-4 sentences retelling it as ancient mythology,
   keeping the emotional truth of the original moment alive
 
-Separate each legend with ---.
+IMPORTANT FORMATTING RULE: Separate each legend with exactly this on its own line:
+---
 """
     return call_llm(prompt)
 
 def generate_theme_color(name, bio):
-    """Ask GPT to pick a hex color that matches the user's mythological energy."""
+    """Ask GPT to pick a hex color matching the user's mythological energy."""
     prompt = f"""
 You have a poet's eye for color. Based on this person's personality and story,
 choose ONE hex color that captures their mythological energy and spirit.
@@ -668,10 +566,10 @@ choose ONE hex color that captures their mythological energy and spirit.
 Person: {name}
 About them: {bio}
 
-Think carefully — a deep teal for someone restless and searching, 
-crimson for fierce passion, gold for ambition, midnight blue for quiet depth.
+Think carefully — deep teal for restless wanderers, crimson for fierce passion,
+gold for ambition, midnight blue for quiet depth.
 
-Reply with ONLY a single hex color code like #4B0082. Nothing else.
+Reply with ONLY a single hex color code like #4B0082. Nothing else. No explanation.
 """
     color = call_llm(prompt).strip()
     if not re.match(r'^#[0-9A-Fa-f]{6}$', color):
@@ -679,17 +577,14 @@ Reply with ONLY a single hex color code like #4B0082. Nothing else.
     return color
 
 def generate_god_images(pantheon_text, num_images):
-    """Generate one DALL-E oil painting per god, limited to num_images."""
+    """Generate DALL-E oil painting per god, limited to num_images."""
     images = []
-    god_blocks = pantheon_text.split("---")
+    god_blocks = split_pantheon(pantheon_text)
     count = 0
 
     for block in god_blocks:
         if count >= num_images:
             break
-        block = block.strip()
-        if not block:
-            continue
 
         # Extract god name
         god_name = "A deity"
@@ -736,11 +631,11 @@ def generate_god_images(pantheon_text, num_images):
             tmp.write(img_data)
             tmp.close()
             images.append(tmp.name)
-            count += 1
         except Exception as e:
             print(f"Image generation failed for {god_name}: {e}")
             images.append(None)
-            count += 1
+
+        count += 1
 
     return images
 
@@ -783,7 +678,7 @@ def build_pdf(name, pantheon_text, legends_text, theme_color="#4B0082", god_imag
     story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor(theme_color)))
     story.append(Spacer(1, 0.3*cm))
 
-    god_blocks = [b.strip() for b in pantheon_text.split("---") if b.strip()]
+    god_blocks = split_pantheon(pantheon_text)
     for i, block in enumerate(god_blocks):
         if i < len(god_images) and god_images[i]:
             try:
@@ -857,7 +752,7 @@ May your legends echo through eternity.
   mythosforge.ai
 
 ────────────────────────────────
-If this landed in spam, mark it as Not Spam — 
+If this landed in spam, mark it as Not Spam —
 we'd hate for your mythology to get lost in the void.
 """
     msg.attach(MIMEText(body, "plain"))
@@ -880,6 +775,13 @@ we'd hate for your mythology to get lost in the void.
         return False
 
 # -------------------------------------------------------
+# FORM VALIDATION HELPER
+# -------------------------------------------------------
+def is_empty(field):
+    """Check if a field is empty or just whitespace."""
+    return not field or not field.strip()
+
+# -------------------------------------------------------
 # MAIN LOGIC
 # -------------------------------------------------------
 generate_btn = st.button("⚡  FORGE MY MYTHOLOGY",
@@ -887,14 +789,14 @@ generate_btn = st.button("⚡  FORGE MY MYTHOLOGY",
                          key="forge_btn")
 
 if generate_btn:
-    if not name or not bio or not hobbies or not events or not email:
+    if is_empty(name) or is_empty(bio) or is_empty(hobbies) or is_empty(events) or is_empty(email):
         st.warning("✦ Please fill in all fields — every detail helps us forge a richer mythology for you.")
     else:
-        st.session_state["pending_name"]   = name
-        st.session_state["pending_bio"]    = bio
-        st.session_state["pending_hobbies"] = hobbies
-        st.session_state["pending_events"] = events
-        st.session_state["pending_email"]  = email
+        st.session_state["pending_name"]    = name.strip()
+        st.session_state["pending_bio"]     = bio.strip()
+        st.session_state["pending_hobbies"] = hobbies.strip()
+        st.session_state["pending_events"]  = events.strip()
+        st.session_state["pending_email"]   = email.strip()
         st.session_state["show_plan_selection"] = True
 
 # ---- PLAN SELECTION & PAYMENT ----
@@ -923,8 +825,7 @@ if st.session_state.get("show_plan_selection") and "pantheon" not in st.session_
              border-radius: 14px; padding: 24px 16px; text-align: center;
              border: 2px solid #c9a84c; margin-bottom: 12px;">
             <div style="font-family: 'Cinzel', serif; color: #4B0082;
-                 font-size: 0.8em; letter-spacing: 2px; margin-bottom: 10px;">
-                SINGLE CODEX</div>
+                 font-size: 0.8em; letter-spacing: 2px; margin-bottom: 10px;">SINGLE CODEX</div>
             <div style="font-family: 'Cinzel', serif; color: #2c2c2c;
                  font-size: 2em; font-weight: 700;">$7</div>
             <div style="font-family: 'Lato', sans-serif; color: #9e8f7a;
@@ -953,8 +854,7 @@ if st.session_state.get("show_plan_selection") and "pantheon" not in st.session_
                  letter-spacing: 2px; padding: 3px 14px; border-radius: 20px;
                  white-space: nowrap;">MOST POPULAR</div>
             <div style="font-family: 'Cinzel', serif; color: #a89bc2;
-                 font-size: 0.8em; letter-spacing: 2px; margin-bottom: 10px;">
-                ETERNAL FORGE</div>
+                 font-size: 0.8em; letter-spacing: 2px; margin-bottom: 10px;">ETERNAL FORGE</div>
             <div style="font-family: 'Cinzel', serif; color: #e8c87a;
                  font-size: 2em; font-weight: 700;">$12</div>
             <div style="font-family: 'Lato', sans-serif; color: #a89bc2;
@@ -988,10 +888,10 @@ if st.session_state.get("show_plan_selection") and "pantheon" not in st.session_
         if not is_email_verified(email):
             st.error("✦ We couldn't verify your payment. Please make sure you used the same email address when paying, then try again.")
         else:
-            name   = st.session_state["pending_name"]
-            bio    = st.session_state["pending_bio"]
+            name    = st.session_state["pending_name"]
+            bio     = st.session_state["pending_bio"]
             hobbies = st.session_state["pending_hobbies"]
-            events = st.session_state["pending_events"]
+            events  = st.session_state["pending_events"]
 
             # Smart image count based on hobbies
             num_images = count_hobbies(hobbies)
