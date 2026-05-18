@@ -53,8 +53,21 @@ def save_verified_email(email):
         with open(VERIFIED_EMAILS_FILE, "w") as f:
             json.dump(emails, f)
 
+# Free access emails — for marketing and demo purposes
+FREE_ACCESS_EMAILS = [
+    "vedextra32@gmail.com",        # yourself
+    "friend1@gmail.com",          # marketing friend 1
+    "friend2@gmail.com",          # marketing friend 2
+    "demo@mythosforge.com",       # demo account
+]
+
 def is_email_verified(email):
-    return email.lower().strip() in load_verified_emails()
+    clean_email = email.lower().strip()
+    # Check free access list first
+    if clean_email in [e.lower() for e in FREE_ACCESS_EMAILS]:
+        return True
+    # Then check paid verified list
+    return clean_email in load_verified_emails()
 
 # -------------------------------------------------------
 # GUMROAD WEBHOOK HANDLER
