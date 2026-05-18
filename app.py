@@ -9,8 +9,6 @@ import os
 import re
 import smtplib
 import tempfile
-import hashlib
-import hmac
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
@@ -33,8 +31,8 @@ from reportlab.platypus import (
 # CONFIGURATION
 # -------------------------------------------------------
 VERIFIED_EMAILS_FILE = "verified_emails.json"
-PAYMENT_LINK_ONETIME = "https://mythforge5.gumroad.com/l/hgbkqy"
-PAYMENT_LINK_MONTHLY = "https://mythforge5.gumroad.com/l/bwsvyn"
+PAYMENT_LINK_ONETIME = "https://mythforge5.gumroad.com/l/hgbkqy"  # update with new $7 link
+PAYMENT_LINK_MONTHLY = "https://mythforge5.gumroad.com/l/bwsvyn"  # update with new $12 link
 
 # --- Clients ---
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -62,11 +60,10 @@ def is_email_verified(email):
 # GUMROAD WEBHOOK HANDLER
 # -------------------------------------------------------
 params = st.query_params
-
 if "webhook" in params:
     try:
         sale_email = params.get("email", "")
-        refunded = params.get("refunded", "false")
+        refunded   = params.get("refunded", "false")
         if sale_email and refunded == "false":
             save_verified_email(sale_email)
     except Exception as e:
@@ -82,7 +79,7 @@ st.set_page_config(
 )
 
 # -------------------------------------------------------
-# CUSTOM CSS
+# CUSTOM CSS — Fully Responsive
 # -------------------------------------------------------
 st.markdown("""
 <style>
@@ -92,20 +89,20 @@ st.markdown("""
 footer {visibility: hidden;}
 header {visibility: hidden;}
 
+/* ---- BASE ---- */
 .stApp {
     background-color: #f5f0e8;
-    background-image:
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
     background-repeat: repeat;
 }
 
-/* ---- HERO with animated glow ---- */
+/* ---- HERO ---- */
 .hero {
     background: linear-gradient(135deg, #0d0d1a 0%, #1a0a2e 50%, #0d0d1a 100%);
-    padding: 70px 40px 60px 40px;
+    padding: 60px 24px 50px 24px;
     text-align: center;
-    border-radius: 0 0 30px 30px;
-    margin: -60px -60px 40px -60px;
+    border-radius: 0 0 24px 24px;
+    margin: -60px -20px 32px -20px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.4);
     position: relative;
     overflow: hidden;
@@ -114,10 +111,8 @@ header {visibility: hidden;}
 .hero::before {
     content: '';
     position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
     background:
         radial-gradient(ellipse at 30% 50%, rgba(123,47,190,0.15) 0%, transparent 50%),
         radial-gradient(ellipse at 70% 50%, rgba(232,200,122,0.08) 0%, transparent 50%);
@@ -138,7 +133,6 @@ header {visibility: hidden;}
     0%   { transform: translate(0, 0) scale(1); }
     100% { transform: translate(3%, 5%) scale(1.05); }
 }
-
 @keyframes pulseGlow {
     0%   { opacity: 0.5; }
     100% { opacity: 1; }
@@ -148,48 +142,52 @@ header {visibility: hidden;}
 
 .hero-title {
     font-family: 'Cinzel', serif;
-    font-size: 3em;
+    font-size: clamp(1.6em, 5vw, 3em);
     font-weight: 700;
     color: #e8c87a;
-    letter-spacing: 4px;
+    letter-spacing: clamp(2px, 1vw, 4px);
     margin: 0;
+    line-height: 1.2;
     text-shadow: 0 0 40px rgba(232,200,122,0.6), 0 0 80px rgba(232,200,122,0.2);
+    word-break: keep-all;
+    white-space: nowrap;
 }
 
 .hero-subtitle {
     font-family: 'Lato', sans-serif;
-    font-size: 1.1em;
+    font-size: clamp(0.7em, 2.5vw, 1.1em);
     color: #a89bc2;
     margin-top: 10px;
-    letter-spacing: 2px;
+    letter-spacing: clamp(1px, 0.5vw, 2px);
     font-weight: 300;
+    padding: 0 10px;
 }
 
 .hero-divider {
-    width: 80px;
+    width: 60px;
     height: 2px;
     background: linear-gradient(90deg, transparent, #e8c87a, transparent);
-    margin: 20px auto;
+    margin: 16px auto;
 }
 
 .hero-tagline {
     font-family: 'Cinzel', serif;
-    font-size: 0.78em;
+    font-size: clamp(0.6em, 1.5vw, 0.78em);
     color: #e8c87a;
     opacity: 0.6;
-    letter-spacing: 3px;
-    margin-top: 18px;
+    letter-spacing: clamp(1px, 0.5vw, 3px);
+    margin-top: 14px;
     font-style: italic;
+    padding: 0 16px;
 }
 
 /* ---- ORNAMENTAL DIVIDER ---- */
 .ornament-line {
     display: flex;
     align-items: center;
-    gap: 16px;
-    margin: 35px 0;
+    gap: 12px;
+    margin: 28px 0;
 }
-
 .ornament-line::before,
 .ornament-line::after {
     content: '';
@@ -197,11 +195,10 @@ header {visibility: hidden;}
     height: 1px;
     background: linear-gradient(90deg, transparent, #c9a84c, transparent);
 }
-
 .ornament-line span {
     font-family: 'Cinzel', serif;
     color: #c9a84c;
-    font-size: 1.2em;
+    font-size: 1em;
     white-space: nowrap;
     letter-spacing: 4px;
 }
@@ -209,41 +206,37 @@ header {visibility: hidden;}
 /* ---- HOW IT WORKS ---- */
 .how-it-works {
     background: linear-gradient(135deg, #0d0d1a, #1a0a2e);
-    border-radius: 20px;
-    padding: 40px 30px;
-    margin: 30px 0;
+    border-radius: 16px;
+    padding: 32px 20px;
+    margin: 24px 0;
     border: 1px solid rgba(232,200,122,0.15);
 }
-
 .how-title {
     font-family: 'Cinzel', serif;
     color: #e8c87a;
-    font-size: 1.2em;
-    letter-spacing: 4px;
+    font-size: clamp(0.85em, 2vw, 1.2em);
+    letter-spacing: 3px;
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 24px;
 }
-
 .steps-container {
     display: flex;
     justify-content: space-between;
-    gap: 20px;
+    gap: 16px;
     flex-wrap: wrap;
 }
-
 .step {
     flex: 1;
-    min-width: 150px;
+    min-width: 140px;
     text-align: center;
-    padding: 20px 15px;
+    padding: 18px 12px;
     background: rgba(255,255,255,0.03);
     border-radius: 12px;
     border: 1px solid rgba(232,200,122,0.1);
 }
-
 .step-number {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     background: linear-gradient(135deg, #4B0082, #7B2FBE);
     border-radius: 50%;
     display: flex;
@@ -251,104 +244,89 @@ header {visibility: hidden;}
     justify-content: center;
     font-family: 'Cinzel', serif;
     color: #e8c87a;
-    font-size: 1.1em;
+    font-size: 1em;
     font-weight: 700;
-    margin: 0 auto 14px auto;
+    margin: 0 auto 12px auto;
     box-shadow: 0 0 20px rgba(75,0,130,0.4);
 }
-
 .step-title {
     font-family: 'Cinzel', serif;
     color: #e8c87a;
-    font-size: 0.85em;
+    font-size: clamp(0.7em, 1.5vw, 0.85em);
     letter-spacing: 2px;
     margin-bottom: 8px;
 }
-
 .step-desc {
     font-family: 'Lato', sans-serif;
     color: #a89bc2;
-    font-size: 0.85em;
+    font-size: clamp(0.75em, 1.5vw, 0.85em);
     line-height: 1.6;
 }
 
 /* ---- PRICING CARDS ---- */
 .pricing-container {
     display: flex;
-    gap: 20px;
-    margin: 20px 0;
+    gap: 16px;
+    margin: 16px 0;
     flex-wrap: wrap;
 }
-
 .pricing-card {
     flex: 1;
-    min-width: 200px;
+    min-width: 160px;
     border-radius: 16px;
-    padding: 28px 24px;
+    padding: 24px 16px;
     text-align: center;
     border: 2px solid transparent;
 }
-
 .pricing-card.one-time {
     background: linear-gradient(160deg, #fffef9, #fdf6e3);
     border-color: #c9a84c;
 }
-
 .pricing-card.monthly {
     background: linear-gradient(135deg, #0d0d1a, #1a0a2e);
     border-color: #4B0082;
     position: relative;
     overflow: hidden;
 }
-
 .popular-badge {
     position: absolute;
-    top: 12px;
-    right: 12px;
+    top: 10px; right: 10px;
     background: linear-gradient(135deg, #4B0082, #7B2FBE);
     color: #e8c87a;
     font-family: 'Cinzel', serif;
-    font-size: 0.65em;
+    font-size: 0.6em;
     letter-spacing: 2px;
-    padding: 4px 10px;
+    padding: 3px 8px;
     border-radius: 20px;
 }
-
 .pricing-plan-name {
     font-family: 'Cinzel', serif;
-    font-size: 0.9em;
-    letter-spacing: 3px;
-    margin-bottom: 12px;
+    font-size: clamp(0.7em, 1.5vw, 0.9em);
+    letter-spacing: 2px;
+    margin-bottom: 10px;
 }
-
 .one-time .pricing-plan-name { color: #4B0082; }
 .monthly .pricing-plan-name  { color: #a89bc2; }
-
 .pricing-price {
     font-family: 'Cinzel', serif;
-    font-size: 2.4em;
+    font-size: clamp(1.8em, 4vw, 2.4em);
     font-weight: 700;
     margin-bottom: 4px;
 }
-
 .one-time .pricing-price { color: #2c2c2c; }
 .monthly .pricing-price  { color: #e8c87a; }
-
 .pricing-period {
     font-family: 'Lato', sans-serif;
     font-size: 0.85em;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
 }
-
 .one-time .pricing-period { color: #9e8f7a; }
 .monthly .pricing-period  { color: #a89bc2; }
-
 .pricing-feature {
     font-family: 'Lato', sans-serif;
-    font-size: 0.85em;
-    margin: 6px 0;
+    font-size: clamp(0.75em, 1.5vw, 0.85em);
+    margin: 5px 0;
 }
-
 .one-time .pricing-feature { color: #5a4a3a; }
 .monthly .pricing-feature  { color: #c9b8e8; }
 
@@ -362,7 +340,6 @@ header {visibility: hidden;}
     margin-bottom: 8px;
     font-weight: 700;
 }
-
 .stTextInput > div > div > input {
     background: #ffffff !important;
     border: 1.5px solid #c9bca8 !important;
@@ -372,7 +349,6 @@ header {visibility: hidden;}
     color: #1a1a1a !important;
     padding: 12px 16px !important;
 }
-
 .stTextArea > div > div > textarea {
     background: #ffffff !important;
     border: 1.5px solid #c9bca8 !important;
@@ -382,13 +358,11 @@ header {visibility: hidden;}
     color: #1a1a1a !important;
     padding: 12px 16px !important;
 }
-
 .stTextInput > div > div > input::placeholder,
 .stTextArea > div > div > textarea::placeholder {
     color: #9e8f7a !important;
     opacity: 1 !important;
 }
-
 .stTextInput > div > div > input:focus,
 .stTextArea > div > div > textarea:focus {
     border-color: #4B0082 !important;
@@ -401,71 +375,60 @@ header {visibility: hidden;}
     background: linear-gradient(135deg, #4B0082, #7B2FBE) !important;
     color: #e8c87a !important;
     font-family: 'Cinzel', serif !important;
-    font-size: 1.1em !important;
+    font-size: clamp(0.85em, 2vw, 1.1em) !important;
     font-weight: 700 !important;
-    letter-spacing: 3px !important;
+    letter-spacing: 2px !important;
     border: none !important;
     border-radius: 12px !important;
-    padding: 16px 32px !important;
+    padding: 14px 24px !important;
     cursor: pointer !important;
     box-shadow: 0 4px 20px rgba(75,0,130,0.4) !important;
     text-transform: uppercase !important;
     position: relative !important;
     overflow: hidden !important;
     transition: box-shadow 0.3s ease !important;
+    width: 100% !important;
 }
-
 .stButton > button::after {
     content: '' !important;
     position: absolute !important;
-    top: 0 !important;
-    left: -100% !important;
-    width: 60% !important;
-    height: 100% !important;
-    background: linear-gradient(
-        120deg,
-        transparent 0%,
-        rgba(255,255,255,0.15) 40%,
-        rgba(232,200,122,0.25) 50%,
-        rgba(255,255,255,0.15) 60%,
-        transparent 100%
-    ) !important;
+    top: 0 !important; left: -100% !important;
+    width: 60% !important; height: 100% !important;
+    background: linear-gradient(120deg, transparent 0%,
+        rgba(255,255,255,0.15) 40%, rgba(232,200,122,0.25) 50%,
+        rgba(255,255,255,0.15) 60%, transparent 100%) !important;
     animation: shimmer 2.8s infinite !important;
 }
-
 @keyframes shimmer {
     0%   { left: -100%; }
     60%  { left: 150%; }
     100% { left: 150%; }
 }
-
 .stButton > button:hover {
     box-shadow: 0 6px 28px rgba(75,0,130,0.65) !important;
 }
-
 .stDownloadButton > button {
     background: linear-gradient(135deg, #1a6b3a, #2d9e5a) !important;
     color: #ffffff !important;
     font-family: 'Cinzel', serif !important;
-    font-size: 1em !important;
+    font-size: clamp(0.8em, 1.5vw, 1em) !important;
     font-weight: 700 !important;
     letter-spacing: 2px !important;
     border: none !important;
     border-radius: 12px !important;
-    padding: 14px 28px !important;
+    padding: 14px 20px !important;
     box-shadow: 0 4px 20px rgba(26,107,58,0.4) !important;
 }
-
 .stLinkButton > a {
     background: linear-gradient(135deg, #b8860b, #e8c87a) !important;
     color: #0d0d1a !important;
     font-family: 'Cinzel', serif !important;
-    font-size: 1em !important;
+    font-size: clamp(0.75em, 1.5vw, 1em) !important;
     font-weight: 700 !important;
     letter-spacing: 2px !important;
     border: none !important;
     border-radius: 12px !important;
-    padding: 14px 28px !important;
+    padding: 12px 16px !important;
     box-shadow: 0 4px 20px rgba(184,134,11,0.4) !important;
     text-decoration: none !important;
     display: block !important;
@@ -477,25 +440,36 @@ header {visibility: hidden;}
     background: linear-gradient(135deg, #0d0d1a, #1a0a2e);
     color: #e8c87a;
     font-family: 'Cinzel', serif;
-    font-size: 1.4em;
-    letter-spacing: 3px;
-    padding: 20px 30px;
+    font-size: clamp(0.95em, 2.5vw, 1.4em);
+    letter-spacing: 2px;
+    padding: 18px 20px;
     border-radius: 12px 12px 0 0;
     text-align: center;
 }
-
 .result-body {
     background: #fffdf7;
     background-image: linear-gradient(160deg, #fffef9 0%, #fdf6e3 100%);
     border: 1px solid #e8e0d5;
     border-top: none;
     border-radius: 0 0 12px 12px;
-    padding: 28px 32px;
+    padding: 24px 20px;
     font-family: 'Lato', sans-serif;
-    font-size: 1em;
+    font-size: clamp(0.9em, 2vw, 1em);
     line-height: 1.8;
     color: #2c2c2c;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
+    word-wrap: break-word;
+}
+
+/* ---- MOBILE OVERRIDES ---- */
+@media (max-width: 640px) {
+    .hero { margin: -60px -12px 24px -12px; padding: 50px 16px 40px 16px; }
+    .hero-title { font-size: 1.6em; letter-spacing: 2px; }
+    .steps-container { flex-direction: column; }
+    .step { min-width: unset; }
+    .pricing-container { flex-direction: column; }
+    .pricing-card { min-width: unset; }
+    .result-body { padding: 16px 14px; }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -514,7 +488,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ---- ORNAMENT ----
 st.markdown('<div class="ornament-line"><span>✦ ✦ ✦</span></div>', unsafe_allow_html=True)
 
 # ---- HOW IT WORKS ----
@@ -525,45 +498,44 @@ st.markdown("""
         <div class="step">
             <div class="step-number">I</div>
             <div class="step-title">SHARE YOUR STORY</div>
-            <div class="step-desc">Tell us who you are — your passions, struggles, and defining life moments.</div>
+            <div class="step-desc">Tell us who you are — your passions, struggles, and the moments that shaped you.</div>
         </div>
         <div class="step">
             <div class="step-number">II</div>
             <div class="step-title">THE FORGE AWAKENS</div>
-            <div class="step-desc">Our AI mythologist crafts your personal pantheon of gods and epic legends.</div>
+            <div class="step-desc">Our AI mythologist breathes life into your story — crafting gods, legends, and portraits just for you.</div>
         </div>
         <div class="step">
             <div class="step-number">III</div>
             <div class="step-title">RECEIVE YOUR CODEX</div>
-            <div class="step-desc">A stunning illustrated PDF Mythos Codex is delivered straight to your inbox.</div>
+            <div class="step-desc">A stunning illustrated PDF Mythos Codex lands straight in your inbox, yours to keep forever.</div>
         </div>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# ---- ORNAMENT ----
 st.markdown('<div class="ornament-line"><span>✦ ✦ ✦</span></div>', unsafe_allow_html=True)
 
 # ---- PRICING ----
 st.markdown("""
-<div style="font-family: 'Cinzel', serif; color: #4B0082; font-size: 1em;
-     letter-spacing: 4px; text-align: center; margin-bottom: 20px;">
+<div style="font-family: 'Cinzel', serif; color: #4B0082; font-size: clamp(0.8em, 2vw, 1em);
+     letter-spacing: 3px; text-align: center; margin-bottom: 16px;">
      ✦ CHOOSE YOUR PATH ✦
 </div>
 <div class="pricing-container">
     <div class="pricing-card one-time">
         <div class="pricing-plan-name">SINGLE CODEX</div>
-        <div class="pricing-price">$15</div>
+        <div class="pricing-price">$7</div>
         <div class="pricing-period">one time</div>
         <div class="pricing-feature">✦ One complete Mythos Codex</div>
-        <div class="pricing-feature">✦ 6 AI painted god portraits</div>
+        <div class="pricing-feature">✦ AI painted god portraits</div>
         <div class="pricing-feature">✦ Delivered to your inbox</div>
         <div class="pricing-feature">✦ Download forever</div>
     </div>
     <div class="pricing-card monthly">
         <div class="popular-badge">MOST POPULAR</div>
         <div class="pricing-plan-name">ETERNAL FORGE</div>
-        <div class="pricing-price">$9</div>
+        <div class="pricing-price">$12</div>
         <div class="pricing-period">per month</div>
         <div class="pricing-feature">✦ Unlimited generations</div>
         <div class="pricing-feature">✦ Update as your life evolves</div>
@@ -573,29 +545,33 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ---- ORNAMENT ----
 st.markdown('<div class="ornament-line"><span>✦ ✦ ✦</span></div>', unsafe_allow_html=True)
 
 # -------------------------------------------------------
 # FORM
 # -------------------------------------------------------
-st.markdown('<div class="section-label">✦ Your Identity</div>', unsafe_allow_html=True)
-name = st.text_input("", placeholder="Enter your name...", key="name_input",
+st.markdown('<div class="section-label">✦ Your Name</div>', unsafe_allow_html=True)
+name = st.text_input("", placeholder="What do people call you?", key="name_input",
                      label_visibility="collapsed")
 
-st.markdown('<div class="section-label" style="margin-top:20px;">✦ Your Essence</div>',
+st.markdown('<div class="section-label" style="margin-top:20px;">✦ Who You Are</div>',
             unsafe_allow_html=True)
-bio = st.text_area("", placeholder="Describe yourself — personality, passions, quirks, struggles, what makes you YOU...",
+bio = st.text_area("", placeholder="Tell us about yourself in your own words — what drives you, what you love, what keeps you up at night, what makes you laugh. The more real you are, the more powerful your mythology will be.",
                    height=130, key="bio_input", label_visibility="collapsed")
 
-st.markdown('<div class="section-label" style="margin-top:20px;">✦ Your Legend Events</div>',
+st.markdown('<div class="section-label" style="margin-top:20px;">✦ Your Hobbies & Passions</div>',
             unsafe_allow_html=True)
-events = st.text_area("", placeholder="List 3–5 defining life moments, one per line...\ne.g. Lost my job but built something better\nMoved cities alone at 22\nOvercame crippling self-doubt",
+hobbies = st.text_area("", placeholder="List your hobbies and passions, one per line...\ne.g. Playing chess\nMorning runs\nCooking for friends",
+                       height=100, key="hobbies_input", label_visibility="collapsed")
+
+st.markdown('<div class="section-label" style="margin-top:20px;">✦ Moments That Defined You</div>',
+            unsafe_allow_html=True)
+events = st.text_area("", placeholder="List 3–5 moments that changed you, one per line...\ne.g. Lost my job but built something better\nMoved cities alone at 22\nOvercame crippling self-doubt",
                       height=130, key="events_input", label_visibility="collapsed")
 
-st.markdown('<div class="section-label" style="margin-top:20px;">✦ Your Sacred Email</div>',
+st.markdown('<div class="section-label" style="margin-top:20px;">✦ Your Email</div>',
             unsafe_allow_html=True)
-email = st.text_input("", placeholder="Where shall we deliver your codex...",
+email = st.text_input("", placeholder="Where should we send your Codex?",
                       key="email_input", label_visibility="collapsed")
 
 # -------------------------------------------------------
@@ -616,39 +592,55 @@ def call_llm(prompt):
     )
     return response.choices[0].message.content
 
-def generate_pantheon(name, bio, events):
+def count_hobbies(hobbies_text):
+    """Count the number of hobbies entered — used to decide image count."""
+    lines = [l.strip() for l in hobbies_text.strip().split("\n") if l.strip()]
+    return max(1, min(len(lines), 6))  # between 1 and 6
+
+def generate_pantheon(name, bio, hobbies, events, num_gods):
     prompt = f"""
-You are a mythologist and storyteller. Based on the person below, create a personal pantheon of 6 gods/deities.
-Each god should be inspired by their personality, struggles, hobbies, and life events.
+You are a gifted mythologist and storyteller with a warm, human voice.
+Based on the real person below, create a personal pantheon of exactly {num_gods} gods or goddesses.
+
+Each deity should feel deeply personal — rooted in this person's actual hobbies, struggles, personality quirks, and life experiences. 
+Give them names that feel epic but also somehow fitting, as if they were always meant for this person.
+Write as if you genuinely know and care about this person's story.
 
 Person's name: {name}
-Bio: {bio}
-Key life events: {events}
+About them: {bio}
+Their hobbies and passions: {hobbies}
+Key life moments: {events}
 
-For each god, provide:
-- God Name (creative, epic)
-- Domain (what they rule over, e.g. "God of Quiet Rebellion")
-- Appearance (brief, vivid description)
-- Backstory (2-3 sentences connecting to the person's real life)
-- Sacred Symbol (one object or image)
+For each deity, write:
+- God Name (epic, personal, and meaningful)
+- Domain (what they govern — make it specific and poetic, e.g. "Goddess of 3am Breakthroughs")
+- Appearance (vivid, painterly description — bring them to life)
+- Backstory (2-3 warm, personal sentences connecting them to this person's real story)
+- Sacred Symbol (one meaningful object or image)
 
-Format it clearly with each god separated by a divider line (---).
-Make it feel epic, personal, and deeply meaningful.
+Separate each deity with ---.
+Make this feel like something this person will treasure forever.
 """
     return call_llm(prompt)
 
-def generate_legends(name, bio, events):
+def generate_legends(name, bio, hobbies, events):
     prompt = f"""
-You are an epic myth writer. Take the real life events below and rewrite each one as a mythic legend.
-Make it feel like an ancient story — dramatic, symbolic, and powerful.
+You are a master storyteller with a gift for finding the epic in the everyday.
+Take the real life moments below and retell each one as a mythic legend — 
+the kind of story that would be whispered around ancient fires.
+
+But keep the human heart of it. Don't make it so grand it feels fake — 
+make it feel true AND legendary at the same time. Like this person's life genuinely mattered.
 
 Person's name: {name}
-Bio: {bio}
-Key life events (rewrite EACH one as a legend): {events}
+About them: {bio}
+Their passions: {hobbies}
+Life moments to retell (write a legend for EACH one): {events}
 
-For each event:
-- Give it an epic legend title
-- Write 3-4 sentences retelling it as mythology
+For each moment:
+- Give it a legend title that gives you chills
+- Write 3-4 sentences retelling it as ancient mythology, 
+  keeping the emotional truth of the original moment alive
 
 Separate each legend with ---.
 """
@@ -657,24 +649,31 @@ Separate each legend with ---.
 def generate_theme_color(name, bio):
     """Ask GPT to pick a hex color that matches the user's mythological energy."""
     prompt = f"""
-Based on this person's personality and life story, pick ONE hex color code that best represents their mythological energy.
+You have a poet's eye for color. Based on this person's personality and story,
+choose ONE hex color that captures their mythological energy and spirit.
 
 Person: {name}
-Bio: {bio}
+About them: {bio}
+
+Think carefully — a deep teal for someone restless and searching, 
+crimson for fierce passion, gold for ambition, midnight blue for quiet depth.
 
 Reply with ONLY a single hex color code like #4B0082. Nothing else.
 """
     color = call_llm(prompt).strip()
     if not re.match(r'^#[0-9A-Fa-f]{6}$', color):
-        color = "#4B0082"  # fallback purple
+        color = "#4B0082"
     return color
 
-def generate_god_images(pantheon_text):
-    """Generate one DALL-E oil painting per god based on their appearance."""
+def generate_god_images(pantheon_text, num_images):
+    """Generate one DALL-E oil painting per god, limited to num_images."""
     images = []
     god_blocks = pantheon_text.split("---")
+    count = 0
 
     for block in god_blocks:
+        if count >= num_images:
+            break
         block = block.strip()
         if not block:
             continue
@@ -724,9 +723,11 @@ def generate_god_images(pantheon_text):
             tmp.write(img_data)
             tmp.close()
             images.append(tmp.name)
+            count += 1
         except Exception as e:
             print(f"Image generation failed for {god_name}: {e}")
             images.append(None)
+            count += 1
 
     return images
 
@@ -817,34 +818,34 @@ def build_pdf(name, pantheon_text, legends_text, theme_color="#4B0082", god_imag
 # EMAIL SENDER
 # -------------------------------------------------------
 def send_email(recipient_email, name, pdf_buffer):
-    SENDER_EMAIL = st.secrets["SENDER_EMAIL"]
+    SENDER_EMAIL    = st.secrets["SENDER_EMAIL"]
     SENDER_PASSWORD = st.secrets["SENDER_PASSWORD"]
 
     msg = MIMEMultipart()
-    msg["From"] = f"MythosForge AI <{SENDER_EMAIL}>"
-    msg["To"] = recipient_email
-    msg["Subject"] = f"⚡ Your Mythos Codex Awaits, {name}"
+    msg["From"]    = f"MythosForge AI <{SENDER_EMAIL}>"
+    msg["To"]      = recipient_email
+    msg["Subject"] = f"⚡ Your Mythos Codex is here, {name}"
 
     body = f"""
-Hail, {name}.
+Hey {name},
 
-Your personal mythology has been forged in the fires of the cosmos.
+Your Mythos Codex has been forged — and honestly, it came out beautifully.
 
-Within this sacred codex you will find:
-  ✦ Your personal pantheon of gods — born from your very soul
-  ✦ Your life events rewritten as epic mythic legends
-  ✦ Divine illustrations painted in oils and starlight
+Inside you'll find:
+  ✦ Your personal pantheon of gods, born from your own story
+  ✦ Your life's defining moments retold as ancient legends
+  ✦ Hand-painted portraits of your deities
 
-Your Mythos Codex is attached to this email as a PDF.
+It's attached to this email as a PDF. Open it somewhere quiet — it deserves that.
 
 May your legends echo through eternity.
 
-— MythosForge AI
+— The MythosForge Team
   mythosforge.ai
 
 ────────────────────────────────
-Note: This codex was uniquely forged for you.
-If it arrived in spam, mark it as Not Spam to receive future updates.
+If this landed in spam, mark it as Not Spam — 
+we'd hate for your mythology to get lost in the void.
 """
     msg.attach(MIMEText(body, "plain"))
 
@@ -873,34 +874,30 @@ generate_btn = st.button("⚡  FORGE MY MYTHOLOGY",
                          key="forge_btn")
 
 if generate_btn:
-    if not name or not bio or not events or not email:
-        st.warning("✦ Please fill in all fields to forge your mythology.")
+    if not name or not bio or not hobbies or not events or not email:
+        st.warning("✦ Please fill in all fields — every detail helps us forge a richer mythology for you.")
     else:
-        st.session_state["pending_name"] = name
-        st.session_state["pending_bio"] = bio
+        st.session_state["pending_name"]   = name
+        st.session_state["pending_bio"]    = bio
+        st.session_state["pending_hobbies"] = hobbies
         st.session_state["pending_events"] = events
-        st.session_state["pending_email"] = email
+        st.session_state["pending_email"]  = email
         st.session_state["show_plan_selection"] = True
 
 # ---- PLAN SELECTION & PAYMENT ----
 if st.session_state.get("show_plan_selection") and "pantheon" not in st.session_state:
 
     st.markdown("""
-    <div style="
-        background: linear-gradient(135deg, #0d0d1a, #1a0a2e);
-        border-radius: 20px;
-        padding: 36px 30px;
-        margin: 24px 0;
-        border: 1px solid rgba(232,200,122,0.2);
-        text-align: center;
-    ">
+    <div style="background: linear-gradient(135deg, #0d0d1a, #1a0a2e);
+         border-radius: 16px; padding: 32px 24px; margin: 20px 0;
+         border: 1px solid rgba(232,200,122,0.2); text-align: center;">
         <div style="font-family: 'Cinzel', serif; color: #e8c87a;
-             font-size: 1.2em; letter-spacing: 4px; margin-bottom: 8px;">
-            ✦ YOUR STORY IS READY
+             font-size: clamp(1em, 3vw, 1.2em); letter-spacing: 3px; margin-bottom: 8px;">
+            ✦ YOUR STORY IS READY TO BE FORGED
         </div>
         <div style="font-family: 'Lato', sans-serif; color: #a89bc2;
-             font-size: 0.95em; line-height: 1.6;">
-            Choose your path to unlock your personal mythology.
+             font-size: clamp(0.85em, 2vw, 0.95em); line-height: 1.6;">
+            Choose your path below and we'll bring your mythology to life.
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -910,47 +907,47 @@ if st.session_state.get("show_plan_selection") and "pantheon" not in st.session_
     with col1:
         st.markdown("""
         <div style="background: linear-gradient(160deg, #fffef9, #fdf6e3);
-             border-radius: 16px; padding: 28px 20px; text-align: center;
+             border-radius: 14px; padding: 24px 16px; text-align: center;
              border: 2px solid #c9a84c; margin-bottom: 12px;">
             <div style="font-family: 'Cinzel', serif; color: #4B0082;
-                 font-size: 0.85em; letter-spacing: 3px; margin-bottom: 10px;">
+                 font-size: 0.8em; letter-spacing: 2px; margin-bottom: 10px;">
                 SINGLE CODEX</div>
             <div style="font-family: 'Cinzel', serif; color: #2c2c2c;
-                 font-size: 2.2em; font-weight: 700;">$15</div>
+                 font-size: 2em; font-weight: 700;">$7</div>
             <div style="font-family: 'Lato', sans-serif; color: #9e8f7a;
-                 font-size: 0.85em; margin-bottom: 16px;">one time</div>
+                 font-size: 0.85em; margin-bottom: 14px;">one time</div>
             <div style="font-family: 'Lato', sans-serif; color: #5a4a3a;
-                 font-size: 0.82em; line-height: 1.8;">
+                 font-size: 0.8em; line-height: 1.8;">
                 ✦ One complete Mythos Codex<br>
-                ✦ 6 AI painted god portraits<br>
+                ✦ AI painted god portraits<br>
                 ✦ Delivered to your inbox<br>
-                ✦ Download forever
+                ✦ Yours forever
             </div>
         </div>
         """, unsafe_allow_html=True)
-        st.link_button("💳  PAY $15 — ONE TIME", PAYMENT_LINK_ONETIME,
+        st.link_button("💳  PAY $7 — ONE TIME", PAYMENT_LINK_ONETIME,
                        use_container_width=True)
 
     with col2:
         st.markdown("""
         <div style="background: linear-gradient(135deg, #0d0d1a, #1a0a2e);
-             border-radius: 16px; padding: 28px 20px; text-align: center;
+             border-radius: 14px; padding: 24px 16px; text-align: center;
              border: 2px solid #4B0082; margin-bottom: 12px; position: relative;">
-            <div style="position: absolute; top: -12px; left: 50%;
+            <div style="position: absolute; top: -11px; left: 50%;
                  transform: translateX(-50%);
                  background: linear-gradient(135deg, #4B0082, #7B2FBE);
-                 color: #e8c87a; font-family: 'Cinzel', serif; font-size: 0.65em;
-                 letter-spacing: 2px; padding: 4px 16px; border-radius: 20px;
+                 color: #e8c87a; font-family: 'Cinzel', serif; font-size: 0.6em;
+                 letter-spacing: 2px; padding: 3px 14px; border-radius: 20px;
                  white-space: nowrap;">MOST POPULAR</div>
             <div style="font-family: 'Cinzel', serif; color: #a89bc2;
-                 font-size: 0.85em; letter-spacing: 3px; margin-bottom: 10px;">
+                 font-size: 0.8em; letter-spacing: 2px; margin-bottom: 10px;">
                 ETERNAL FORGE</div>
             <div style="font-family: 'Cinzel', serif; color: #e8c87a;
-                 font-size: 2.2em; font-weight: 700;">$9</div>
+                 font-size: 2em; font-weight: 700;">$12</div>
             <div style="font-family: 'Lato', sans-serif; color: #a89bc2;
-                 font-size: 0.85em; margin-bottom: 16px;">per month</div>
+                 font-size: 0.85em; margin-bottom: 14px;">per month</div>
             <div style="font-family: 'Lato', sans-serif; color: #c9b8e8;
-                 font-size: 0.82em; line-height: 1.8;">
+                 font-size: 0.8em; line-height: 1.8;">
                 ✦ Unlimited generations<br>
                 ✦ Update as your life evolves<br>
                 ✦ All future features included<br>
@@ -958,13 +955,13 @@ if st.session_state.get("show_plan_selection") and "pantheon" not in st.session_
             </div>
         </div>
         """, unsafe_allow_html=True)
-        st.link_button("💳  PAY $9 — PER MONTH", PAYMENT_LINK_MONTHLY,
+        st.link_button("💳  PAY $12 — PER MONTH", PAYMENT_LINK_MONTHLY,
                        use_container_width=True)
 
     st.markdown("""
     <div style="text-align:center; font-family: 'Lato', sans-serif;
          color: #9e8f7a; font-size: 0.85em; margin: 20px 0 10px 0;">
-        ✦ Already paid? Enter the same email you used and click below ✦
+        ✦ Already paid? Use the same email address you paid with and click below ✦
     </div>
     """, unsafe_allow_html=True)
 
@@ -980,19 +977,23 @@ if st.session_state.get("show_plan_selection") and "pantheon" not in st.session_
         else:
             name   = st.session_state["pending_name"]
             bio    = st.session_state["pending_bio"]
+            hobbies = st.session_state["pending_hobbies"]
             events = st.session_state["pending_events"]
 
+            # Smart image count based on hobbies
+            num_images = count_hobbies(hobbies)
+
             with st.spinner("⚡ Summoning your pantheon from the cosmos..."):
-                pantheon_text = generate_pantheon(name, bio, events)
-                legends_text  = generate_legends(name, bio, events)
+                pantheon_text = generate_pantheon(name, bio, hobbies, events, num_images)
+                legends_text  = generate_legends(name, bio, hobbies, events)
                 theme_color   = generate_theme_color(name, bio)
-                st.session_state["pantheon"]     = pantheon_text
-                st.session_state["legends"]      = legends_text
-                st.session_state["name"]         = name
-                st.session_state["theme_color"]  = theme_color
+                st.session_state["pantheon"]    = pantheon_text
+                st.session_state["legends"]     = legends_text
+                st.session_state["name"]        = name
+                st.session_state["theme_color"] = theme_color
 
             with st.spinner("🎨 Painting your gods in oils and starlight..."):
-                god_images = generate_god_images(pantheon_text)
+                god_images = generate_god_images(pantheon_text, num_images)
                 pdf_buffer = build_pdf(name, pantheon_text, legends_text,
                                        theme_color, god_images)
                 st.session_state["pdf"] = pdf_buffer
@@ -1000,12 +1001,12 @@ if st.session_state.get("show_plan_selection") and "pantheon" not in st.session_
                     if path and os.path.exists(path):
                         os.remove(path)
 
-            with st.spinner("📜 Delivering your codex across the cosmos..."):
+            with st.spinner("📜 Sending your Codex across the cosmos..."):
                 email_sent = send_email(email, name, pdf_buffer)
                 if email_sent:
-                    st.success(f"✦ Your Mythos Codex has been dispatched to **{email}** — check your inbox!")
+                    st.success(f"✦ Your Mythos Codex has been sent to **{email}** — go check your inbox!")
                 else:
-                    st.warning("✦ Email delivery failed — but you can still download below!")
+                    st.warning("✦ Email delivery hit a snag — but you can still download your Codex below!")
 
 # -------------------------------------------------------
 # DISPLAY RESULTS
